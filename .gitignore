@@ -1,0 +1,6 @@
+# Material de trabajo, fuera del entregable
+_trabajo/
+
+# Sistema
+.DS_Store
+Thumbs.db
