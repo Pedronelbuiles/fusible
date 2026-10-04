@@ -35,7 +35,7 @@ Blockchain Acceleration Foundation, Ruta N Medellín y Stellar
 | Semana | Entregable | Estado |
 |---|---|---|
 | 1 | Problem brief | Entregado |
-| 2 | Product blueprint | Pendiente |
+| 2 | Product blueprint | Entregado |
 | 3 | Functional proof | Pendiente |
 | 4 | Validated MVP | Pendiente |
 | 5 | Demo package | Pendiente |
@@ -48,7 +48,7 @@ Blockchain Acceleration Foundation, Ruta N Medellín y Stellar
 docs/
 ├── entrevistas/     Notas de validación con usuarios
 ├── semana1/         Problem brief y propuesta individual
-├── semana2/         Product blueprint
+├── semana2/         Product blueprint, historias, lean canvas y arquitectura
 ├── semana3/         Functional proof
 ├── semana4/         Validated MVP
 └── semana5/         Demo package
