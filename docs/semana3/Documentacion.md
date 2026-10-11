@@ -2,11 +2,15 @@
 
 **Proyecto:** Fusible
 **Repositorio:** [Pedronelbuiles/fusible](https://github.com/Pedronelbuiles/fusible)
+**Front desplegado:** <https://fusible101.vercel.app>
 **Red:** testnet
 
 ---
 
 ## Front construido
+
+**El front está publicado y se puede recorrer completo en
+<https://fusible101.vercel.app>** — no hace falta instalarlo para probarlo.
 
 El front implementa el flujo principal del MVP definido en el Product
 Blueprint: un responsable de presupuesto define un límite de gasto, lo

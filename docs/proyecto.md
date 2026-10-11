@@ -26,6 +26,10 @@ después.
 
 ---
 
+## Dónde verlo
+
+Front desplegado: <https://fusible101.vercel.app>
+
 ## Estado
 
 Proyecto en desarrollo dentro de **Blockchain Builders 101**, programa de
