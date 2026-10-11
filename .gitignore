@@ -4,3 +4,6 @@ _trabajo/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Pruebas manuales, material de trabajo local
+pruebas/
