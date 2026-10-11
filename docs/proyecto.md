@@ -36,7 +36,7 @@ Blockchain Acceleration Foundation, Ruta N Medellín y Stellar
 |---|---|---|
 | 1 | Problem brief | Entregado |
 | 2 | Product blueprint | Entregado |
-| 3 | Functional proof | Pendiente |
+| 3 | Functional proof | Entregado |
 | 4 | Validated MVP | Pendiente |
 | 5 | Demo package | Pendiente |
 
@@ -45,19 +45,21 @@ Blockchain Acceleration Foundation, Ruta N Medellín y Stellar
 ## Estructura
 
 ```
+frontend/            Interfaz del producto (Vite + React + TypeScript)
 docs/
 ├── entrevistas/     Notas de validación con usuarios
+├── proyecto.md      Este documento
 ├── semana1/         Problem brief y propuesta individual
 ├── semana2/         Product blueprint, historias, lean canvas y arquitectura
-├── semana3/         Functional proof
+├── semana3/         Documentación del front y decisión técnica
 ├── semana4/         Validated MVP
 └── semana5/         Demo package
 ```
 
-Desde la semana 3 se incorporan `contracts/` (contrato en Soroban), `web/`
-(interfaz) y `agent/` (programa de demostración).
+En la semana 4 se incorpora `contracts/` con el contrato en Soroban.
 
-**Empieza por** [`docs/semana1/ProblemBrief.md`](docs/semana1/ProblemBrief.md).
+**Empieza por** [`semana1/ProblemBrief.md`](semana1/ProblemBrief.md). Para
+correr el proyecto, ver el [README](../README.md).
 
 ---
 
@@ -88,4 +90,4 @@ aplique.
 
 ## Licencia
 
-MIT. Ver [LICENSE](LICENSE).
+MIT. Ver [LICENSE](../LICENSE).
