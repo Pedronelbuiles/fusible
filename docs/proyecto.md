@@ -3,15 +3,20 @@
 **Un presupuesto con límites para programas de inteligencia artificial que
 pagan solos.**
 
-Hoy, para que un programa autónomo pueda pagar por los servicios que
-consume, hay que entregarle una credencial con un medio de pago detrás y
-gasto ilimitado. No existe el tope duro, no existe la lista de destinos
-permitidos, no existe el interruptor de corte, y el registro de lo que gastó
-lo lleva el mismo proveedor que le cobró.
+La forma más común de que un programa autónomo pague por lo que consume es
+entregarle una credencial con un medio de pago detrás y sin techo: la
+credencial responde "quién eres", nunca "hasta cuánto".
 
-Fusible es ese límite: un contrato que guarda el presupuesto de un programa
-y lo libera solo bajo reglas que ni el programa ni su autor pueden cambiar
-después.
+Ya existen productos que ponen ese límite —AWS AgentCore Payments, Privy,
+Openfort—, pero en todos el límite y el registro los administra un
+proveedor, y ese registro vive en la cuenta de quien opera el agente. Si
+quien gasta y quien debe rendir cuentas son partes distintas, eso no
+alcanza. El análisis completo está en [`competencia.md`](competencia.md).
+
+Fusible es ese límite sin administrador: un contrato que guarda el
+presupuesto de un programa y lo libera solo bajo reglas que ni el programa
+ni su autor pueden cambiar después, y que deja un registro que ninguna de
+las partes controla.
 
 ---
 
@@ -51,6 +56,7 @@ Blockchain Acceleration Foundation, Ruta N Medellín y Stellar
 ```
 frontend/            Interfaz del producto (Vite + React + TypeScript)
 docs/
+├── competencia.md   Alternativas que ya existen y qué sigue siendo distinto
 ├── entrevistas/     Notas de validación con usuarios
 ├── proyecto.md      Este documento
 ├── semana1/         Problem brief y propuesta individual

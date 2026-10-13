@@ -133,11 +133,21 @@ ingrediente que ninguna operación nativa ofrece es el **gasto acumulado
 como estado consultable que condiciona la siguiente operación**. Sin eso no
 hay tope, y sin tope no hay producto.
 
-**Qué se descartó.** Usar una herramienta existente del ecosistema (opción
-B). Lo que hay disponible resuelve mover valor, emitir activos o conectar
-con moneda local; ninguna de esas piezas acota lo que un tercero autónomo
-puede gastar. La parte que nos interesa es justamente la que no existe, y es
-la razón por la que el proyecto tiene sentido.
+**Qué se descartó.** Usar una herramienta existente (opción B). Aquí hay que
+ser precisos: **sí existen productos que acotan el gasto de un agente** —AWS
+Bedrock AgentCore Payments, Privy, Openfort, y trabajo de OpenZeppelin sobre
+Stellar—. Lo revisamos tarde, y el análisis está en
+[`competencia.md`](../competencia.md).
+
+Se descartaron por una razón concreta, no por desconocerlos: en todos, el
+límite y el registro los administra un proveedor, y ese registro vive en la
+cuenta de quien opera el agente. Para el caso en que quien gasta y quien
+rinde cuentas son partes distintas, eso no alcanza: el cliente tendría que
+creerle al operador. Un contrato deja un registro que ninguna de las dos
+partes controla.
+
+Es una diferencia estrecha y todavía sin validar con usuarios, pero es
+arquitectónica: no se cierra cambiando una configuración.
 
 Esto es coherente con el uso de Stellar declarado en el Blueprint:
 contratos Soroban para las reglas, eventos del contrato para el registro,

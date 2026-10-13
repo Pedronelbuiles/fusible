@@ -286,9 +286,10 @@ imposibilidad de cortar.
 **Por qué esta y no otra.** Primero, porque es la causa y no el síntoma: con
 un tope real que detiene de verdad, el desfase de treinta días de F3 deja de
 ser peligroso, porque la pérdida máxima ya está definida de antemano.
-Segundo, porque es la única fricción que ningún proveedor puede resolver por
-su cuenta: exigiría que quien cobra se autolimite, y nadie construye el
-freno del negocio del que vive. Tercero, porque cambia la categoría del
+Segundo, porque el control tiene que vivir fuera de quien cobra: un tope que
+administra el propio proveedor obliga a confiar en él. Existen productos que
+ya lo resuelven —ver [`competencia.md`](../competencia.md)—, y en todos el
+límite lo administra un tercero. Tercero, porque cambia la categoría del
 problema. Atacar F3 o F7 es hablar de eficiencia y de ahorro; atacar F1 es
 hablar de contención de daño. Un programa autónomo manipulado y con
 capacidad de pagar no es un problema de sobrecosto, es un incidente de
@@ -396,6 +397,11 @@ contando el problema como seguridad y no como costos.
 | `docs/entrevistas/cuestionario.md` | Guía de las entrevistas de validación |
 | `docs/entrevistas/README.md` | Índice de las entrevistas realizadas |
 | `docs/semana2` … `semana5` | Entregables de las semanas siguientes |
+
+> Este árbol refleja el repositorio al cierre de la semana 1. El estado
+> actual está en [`docs/proyecto.md`](../proyecto.md): el README pasó a ser
+> solo las instrucciones de ejecución, su contenido se movió a ese archivo,
+> y se agregaron `frontend/` y [`docs/competencia.md`](../competencia.md).
 
 A partir de la semana 3 se incorpora el código del proyecto: el contrato
 en `contracts/fusible/`, la interfaz en `web/` y el programa de

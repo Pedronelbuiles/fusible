@@ -65,11 +65,13 @@ la pérdida máxima antes de soltar el proceso, y lo que pase después queda
 dentro de un límite que fijó él y que después nadie puede mover, ni él
 mismo.
 
-**Por qué elegiría este producto:** porque es el único que *detiene* en vez
-de *avisar*. Una alerta de consumo llega cuando el gasto ya ocurrió; un tope
-que se ejecuta solo impide que ocurra. Y le entrega algo que hoy no consigue
-a ningún precio: un registro de lo que se gastó que no publica quien le
-cobró, y que por eso sirve de evidencia ante una disputa.
+**Por qué elegiría este producto:** porque *detiene* en vez de *avisar*, y
+porque el registro no es de nadie. Una alerta llega cuando el gasto ya
+ocurrió; un tope que se ejecuta solo impide que ocurra. Otros productos ya
+detienen —AWS AgentCore, Privy, Openfort—, pero todos guardan el registro en
+la cuenta de quien opera el agente. Daniel necesita poder mostrárselo a un
+tercero sin que ese tercero tenga que creerle
+(ver [`competencia.md`](../competencia.md)).
 
 **En qué se diferencia de lo que hace hoy:** hoy tiene tres salidas y
 ninguna sirve. No poner límite y revisar la cuenta al cierre es enterarse
