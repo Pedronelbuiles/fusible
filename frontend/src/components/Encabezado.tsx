@@ -1,4 +1,13 @@
-export default function Encabezado() {
+import type { Firmante } from '../stellar/firmante'
+import { corto } from '../dominio'
+
+export default function Encabezado({
+  firmante,
+  onSalir,
+}: {
+  firmante: Firmante | null
+  onSalir: () => void
+}) {
   return (
     <header className="encabezado">
       <div className="marca">
@@ -16,7 +25,22 @@ export default function Encabezado() {
           <p>Límites de gasto para agentes que pagan solos</p>
         </div>
       </div>
-      <span className="red">testnet</span>
+
+      <div className="sesion">
+        <span className="red">testnet</span>
+        {firmante && (
+          <>
+            <span className="quien">
+              <span className="punto" aria-hidden="true" />
+              <code>{corto(firmante.direccion)}</code>
+              <small>{firmante.etiqueta}</small>
+            </span>
+            <button className="boton fantasma salir" onClick={onSalir}>
+              Salir
+            </button>
+          </>
+        )}
+      </div>
     </header>
   )
 }
