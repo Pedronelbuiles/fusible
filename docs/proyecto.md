@@ -58,6 +58,7 @@ contracts/           Contrato `fusible` en Soroban (Rust)
 frontend/            Interfaz del producto (Vite + React + TypeScript)
 docs/
 ├── competencia.md   Alternativas que ya existen y qué sigue siendo distinto
+├── costos.md        Cuánto cuesta cada operación, medido
 ├── roadmap.md       Qué sigue, antes y después del cierre
 ├── entrevistas/     Notas de validación con usuarios
 ├── proyecto.md      Este documento

@@ -257,9 +257,8 @@ del gasto no puede pertenecer a quien cobró.
 | SDK de JavaScript | Construir y firmar desde panel y proceso | Un solo lenguaje reduce el riesgo |
 | Freighter | Firma del dueño | Autocustodia: nunca guardamos llaves |
 
-**Costos y dinero real.** Cada operación cuesta 100 stroops (0.00001 XLM)
-y confirma en unos 5 segundos: por eso el micropago repetido es viable aquí
-y no con una pasarela. La reserva mínima en lumens la asume Daniel. En el MVP no hay rampa de entrada ni de salida a pesos, y
+**Costos y dinero real.** Un pago cuesta 0,0792 XLM medidos y confirma en
+unos 5 segundos (ver [`costos.md`](../costos.md)). La reserva mínima en lumens la asume Daniel. En el MVP no hay rampa de entrada ni de salida a pesos, y
 no hace falta: el caso es un pago entre programas, no una conversión a
 moneda local.
 

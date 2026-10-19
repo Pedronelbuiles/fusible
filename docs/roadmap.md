@@ -88,7 +88,17 @@ forma de volver a encontrar el fusible que creaste.
 
 *Esfuerzo estimado, no medido: medio.*
 
-### 3. Medir el costo real por invocación
+### 3. Medir el costo real por invocación · **hecho el 19 de octubre**
+
+> **El resultado nos desfavorece.** Un pago cuesta 0,0792 XLM (~USD 0,0141)
+> contra USD 0,005 de AgentCore, que además regala 5.000 operaciones al mes.
+> El argumento de costo no existe; ver [`costos.md`](costos.md).
+>
+> Siguiente paso derivado: `pay` reescribe el fusible completo en cada pago,
+> incluida la lista de destinos que nunca cambia. Separar lo inmutable de lo
+> mutable debería bajarlo — cuánto, no está medido.
+
+#### Lo que decía el plan
 
 **Qué:** simular cada operación con `simulateTransaction` y anotar el fee
 —inclusion y resource— en la documentación.

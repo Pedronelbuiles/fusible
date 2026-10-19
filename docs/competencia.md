@@ -46,13 +46,20 @@ mercado no exista: es que está siendo atendido.
 | El mínimo de red en Stellar es 100 stroops (0,00001 XLM) por operación | [Tarifas Stellar](https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering) | Confirmado |
 | Una transacción de contrato Soroban paga **Resource Fee + Inclusion Fee** | [Tarifas Stellar](https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering) | Confirmado |
 
-## Sin verificar
+## Medido el 19 de octubre: el costo nos desfavorece
 
-- **Cuánto cuesta realmente una invocación al contrato Fusible.** El
-  resource fee cubre CPU, accesos al ledger, I/O, tamaño de la transacción,
-  tamaño de los eventos y renta de almacenamiento, y Stellar no publica esos
-  precios: hay que simular con `simulateTransaction`. Hasta que el contrato
-  exista, no hay número.
+**Un pago del agente cuesta 0,0792 XLM** — unos USD 0,0141 con XLM a 0,178.
+AgentCore cuesta USD 0,005 por operación y regala las primeras 5.000 del mes.
+
+**Fusible es ~2,8 veces más caro, y gratis-contra-algo por debajo de 5.000
+operaciones mensuales.** El detalle y el método están en
+[`costos.md`](costos.md).
+
+Esto elimina el argumento de costo. Lo que queda es la diferencia
+arquitectónica: el límite y el registro no los administra ninguna de las
+partes.
+
+## Sin verificar
 - **Cuántas operaciones de wallet consume un pago vía AgentCore.** AWS dice
   que `ProcessPayment` cuenta como una; la tabla de Coinbase dice que enviar
   una transacción son dos. No está resuelto.
