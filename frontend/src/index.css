@@ -621,3 +621,69 @@ code {
   .portada h2 { font-size: 1.8rem; }
   .sesion { flex-wrap: wrap; justify-content: flex-end; }
 }
+
+/* ---------- recorrido guiado ---------- */
+
+.tour { position: fixed; inset: 0; z-index: 60; }
+
+.tour-hueco {
+  position: fixed;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px #0b0810d9, 0 0 0 2px var(--ambar);
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.tour-globo {
+  position: fixed;
+  width: min(340px, calc(100vw - 32px));
+  background: var(--panel);
+  border: 1px solid var(--ambar);
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 18px 44px #00000099;
+}
+
+.tour-cuenta {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ambar);
+}
+
+.tour-globo h4 { margin: 6px 0 7px; font-size: 1rem; }
+.tour-globo p { margin: 0 0 16px; font-size: 0.88rem; color: var(--suave); line-height: 1.55; }
+
+.tour-botones { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tour-botones > div { display: flex; gap: 7px; }
+.tour-botones .boton { width: auto; padding: 7px 15px; font-size: 0.85rem; text-align: center; }
+
+.tour-botones .enlace {
+  background: none;
+  border: none;
+  color: var(--suave);
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+  padding: 0;
+}
+.tour-botones .enlace:hover { color: var(--texto); text-decoration: underline; }
+
+.ayuda-tour {
+  margin-left: auto;
+  background: none !important;
+  border: none !important;
+  color: var(--ambar) !important;
+  font-size: 0.82rem !important;
+  cursor: pointer;
+  padding: 5px 0 !important;
+}
+.ayuda-tour:hover { text-decoration: underline; }
+
+.vacio {
+  margin: 0;
+  padding: 22px 0;
+  text-align: center;
+  color: var(--suave);
+  font-size: 0.86rem;
+}

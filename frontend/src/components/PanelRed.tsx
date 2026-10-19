@@ -5,31 +5,26 @@ import {
   aStroops,
   aUnidades,
   urlContrato,
-  urlTx,
+
 } from '../stellar/config'
 import {
   type ErrorContrato,
   type EstadoCadena,
+  type EventoCadena,
   cortar,
   crearFusible,
   fondear,
   leerDeDueno,
   leerEstado,
+  leerEventos,
   pagar,
   retirar,
 } from '../stellar/contrato'
 import type { Firmante } from '../stellar/firmante'
-import { corto, hora, money } from '../dominio'
+import { corto, money } from '../dominio'
 import { ModalError, ModalProceso, type PasoProceso } from './Modal'
-
-interface Linea {
-  id: number
-  tipo: 'pago' | 'bloqueado' | 'creado' | 'fondeado' | 'cortado' | 'retiro'
-  texto: string
-  detalle?: string
-  hash?: string
-  momento: number
-}
+import Registro, { type Rechazo } from './Registro'
+import Tour, { PASOS_TOUR, yaVioElTour } from './Tour'
 
 interface Proceso {
   titulo: string
@@ -48,16 +43,35 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
   const [cargando, setCargando] = useState(true)
   const [proceso, setProceso] = useState<Proceso | null>(null)
   const [fallo, setFallo] = useState<Fallo | null>(null)
-  const [lineas, setLineas] = useState<Linea[]>([])
   const [creando, setCreando] = useState(false)
+  const [eventos, setEventos] = useState<EventoCadena[]>([])
+  const [cargandoEventos, setCargandoEventos] = useState(false)
+  const [rechazos, setRechazos] = useState<Rechazo[]>([])
+  const [tour, setTour] = useState(false)
 
-  const anotar = (l: Omit<Linea, 'id' | 'momento'>) =>
-    setLineas((p) => [{ ...l, id: Date.now() + Math.random(), momento: Date.now() }, ...p])
+  const anotarRechazo = (r: Omit<Rechazo, 'id' | 'momento'>) =>
+    setRechazos((p) => [{ ...r, id: Date.now() + Math.random(), momento: Date.now() }, ...p])
 
-  const cargar = useCallback(async (id: number) => {
-    setEstado(await leerEstado(id))
-    setIdFusible(id)
+  /** Trae el registro del contrato para el fusible que se está viendo. */
+  const cargarEventos = useCallback(async (id: number) => {
+    setCargandoEventos(true)
+    try {
+      setEventos(await leerEventos(id))
+    } catch {
+      setEventos([])
+    } finally {
+      setCargandoEventos(false)
+    }
   }, [])
+
+  const cargar = useCallback(
+    async (id: number) => {
+      setEstado(await leerEstado(id))
+      setIdFusible(id)
+      void cargarEventos(id)
+    },
+    [cargarEventos],
+  )
 
   const misIds = useCallback(async (direccion: string) => {
     try {
@@ -82,6 +96,7 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
         setEstado(null)
       }
       setCargando(false)
+      if (!yaVioElTour()) setTour(true)
     })()
   }, [firmante, cargar, misIds])
 
@@ -103,23 +118,11 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
         destinos: DESTINOS.map((d) => d.direccion),
         vigenciaHasta: vig,
       })
-      anotar({
-        tipo: 'creado',
-        texto: `Fusible #${r.valor} creado`,
-        detalle: `Tope ${money(topeTotal)} XLM · máximo ${money(topePorOp)} por operación`,
-        hash: r.hash,
-      })
-
       pasos[0].estado = 'hecho'
       pasos[1].estado = 'activo'
       setProceso({ titulo, pasos: [...pasos] })
 
-      const f = await fondear(firmante, r.valor, aStroops(topeTotal))
-      anotar({
-        tipo: 'fondeado',
-        texto: `Presupuesto depositado · ${money(topeTotal)} XLM`,
-        hash: f.hash,
-      })
+      await fondear(firmante, r.valor, aStroops(topeTotal))
 
       setMios(await misIds(firmante.direccion))
       await cargar(r.valor)
@@ -141,21 +144,16 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
       pasos: [{ texto: `Enviando ${money(monto)} XLM a ${etiqueta}`, estado: 'activo' }],
     })
     try {
-      const r = await pagar(idFusible, destino, aStroops(monto))
-      anotar({
-        tipo: 'pago',
-        texto: `Pago ejecutado · ${money(monto)} XLM`,
-        detalle: etiqueta,
-        hash: r.hash,
-      })
+      await pagar(idFusible, destino, aStroops(monto))
       await cargar(idFusible)
     } catch (e) {
       // Un rechazo por regla es un resultado esperado: va al registro, no a
-      // un modal. Solo interrumpe lo que el usuario no espera.
-      anotar({
-        tipo: 'bloqueado',
-        texto: `Pago rechazado · ${money(monto)} XLM`,
-        detalle: `${etiqueta} — ${(e as ErrorContrato).message}`,
+      // un modal. Y no deja rastro en la red, así que se anota aquí.
+      anotarRechazo({
+        idFusible,
+        monto,
+        destino: etiqueta,
+        motivo: (e as ErrorContrato).message,
       })
     } finally {
       setProceso(null)
@@ -164,16 +162,13 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
 
   const accionDueno = async (
     fn: () => Promise<{ hash: string; valor: unknown }>,
-    tipo: Linea['tipo'],
-    texto: (v: unknown) => string,
     titulo: string,
     paso: string,
   ) => {
     if (idFusible === null) return
     setProceso({ titulo, pasos: [{ texto: paso, estado: 'activo' }] })
     try {
-      const r = await fn()
-      anotar({ tipo, texto: texto(r.valor), hash: r.hash })
+      await fn()
       await cargar(idFusible)
     } catch (e) {
       setFallo({ titulo, mensaje: (e as ErrorContrato).message })
@@ -186,6 +181,7 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
 
   const modales = (
     <>
+      {tour && <Tour pasos={PASOS_TOUR} onCerrar={() => setTour(false)} />}
       {proceso && <ModalProceso titulo={proceso.titulo} pasos={proceso.pasos} />}
       {fallo && (
         <ModalError
@@ -249,6 +245,7 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
         bloqueado={ocupado}
         onElegir={(n) => void cargar(n)}
         onNuevo={() => setCreando(true)}
+        onTour={() => setTour(true)}
       />
 
       <main className="tablero">
@@ -269,7 +266,7 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
               . Nada de esta pantalla está simulado.
             </p>
 
-            <div className="medidor">
+            <div className="medidor" data-tour="medidor">
               <div className="cifras">
                 <strong>{money(gastado)}</strong>
                 <span>de {money(tope)} XLM</span>
@@ -306,15 +303,13 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
               </div>
             </dl>
 
-            <div className="acciones">
+            <div className="acciones" data-tour="acciones">
               <button
                 className="boton peligro"
                 disabled={sinPagos || !esMio}
                 onClick={() =>
                   void accionDueno(
                     () => cortar(firmante, estado.id),
-                    'cortado',
-                    () => 'Fusible cortado',
                     'Cortando el fusible',
                     'Dejándolo inutilizable, para siempre',
                   )
@@ -328,8 +323,6 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
                 onClick={() =>
                   void accionDueno(
                     () => retirar(firmante, estado.id),
-                    'retiro',
-                    (v) => `Remanente retirado · ${money(aUnidades(v as bigint))} XLM`,
                     'Devolviendo el remanente',
                     'Enviando lo que no se gastó de vuelta a tu billetera',
                   )
@@ -355,7 +348,7 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
             )}
           </section>
 
-          <section className="tarjeta consola">
+          <section className="tarjeta consola" data-tour="agente">
             <h2>Agente de demostración</h2>
             <p className="ayuda">
               Cada botón arma una transacción real, la firma con la llave del
@@ -397,42 +390,12 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
           </section>
         </div>
 
-        <section className="tarjeta historial">
-          <div className="fila-titulo">
-            <h2>Registro</h2>
-            <span className="resumen">
-              {lineas.filter((l) => l.tipo === 'pago').length} ejecutados ·{' '}
-              {lineas.filter((l) => l.tipo === 'bloqueado').length} rechazados
-            </span>
-          </div>
-          <p className="ayuda">
-            Cada operación ejecutada deja un hash que cualquiera puede
-            verificar. Los rechazos los detiene el contrato antes de gastar
-            comisión, así que no generan transacción.
-          </p>
-
-          <ol className="eventos">
-            {lineas.map((l) => (
-              <li key={l.id} className={l.tipo}>
-                <span className="hora">{hora(l.momento)}</span>
-                <div className="cuerpo">
-                  <strong>{l.texto}</strong>
-                  {l.detalle && <p className="motivo">{l.detalle}</p>}
-                  {l.hash && (
-                    <a
-                      className="destino-ev"
-                      href={urlTx(l.hash)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      ver en el explorador ↗
-                    </a>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
+        <Registro
+          idFusible={estado.id}
+          eventos={eventos}
+          rechazos={rechazos}
+          cargando={cargandoEventos}
+        />
       </main>
 
       {modales}
@@ -446,15 +409,17 @@ function Selector({
   bloqueado,
   onElegir,
   onNuevo,
+  onTour,
 }: {
   mios: number[]
   actual: number | null
   bloqueado: boolean
   onElegir: (n: number) => void
   onNuevo: () => void
+  onTour?: () => void
 }) {
   return (
-    <nav className="mis-fusibles">
+    <nav className="mis-fusibles" data-tour="selector">
       <span>Mis fusibles</span>
       {mios.map((n) => (
         <button
@@ -469,6 +434,11 @@ function Selector({
       <button className="nuevo" disabled={bloqueado} onClick={onNuevo}>
         + nuevo
       </button>
+      {onTour && (
+        <button className="ayuda-tour" onClick={onTour} title="Ver el recorrido">
+          ¿Cómo funciona?
+        </button>
+      )}
     </nav>
   )
 }
@@ -493,7 +463,7 @@ function Formulario({
   const valido = t > 0 && p > 0 && p <= t && Number(horas) > 0
 
   return (
-    <section className="tarjeta">
+    <section className="tarjeta" data-tour="formulario">
       <span className="paso">{primero ? 'Tu primer fusible' : 'Crear otro fusible'}</span>
       <h2>Define el límite</h2>
       <p className="ayuda">

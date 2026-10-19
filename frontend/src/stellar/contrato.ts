@@ -191,3 +191,77 @@ export const leerTotal = () => leer<number>('total')
 
 /** Los fusibles de una dirección, del más viejo al más nuevo. */
 export const leerDeDueno = (owner: string) => leer<number[]>('de_dueno', dir(owner))
+
+// ---- el registro, leído de la red ----
+
+export interface EventoCadena {
+  tipo: 'creado' | 'fondeado' | 'pago' | 'cortado' | 'retiro'
+  idFusible: number
+  monto?: bigint
+  destino?: string
+  hash: string
+  ledger: number
+}
+
+/**
+ * Cuántos ledgers atrás se piden los eventos.
+ *
+ * Ojo con esto: el RPC solo conserva una ventana corta, y si se le pide un
+ * `startLedger` anterior **devuelve una lista vacía en vez de un error**.
+ * Medido el 19/10/2026 en testnet: con 8.000 ledgers devuelve eventos y con
+ * 17.280 devuelve cero. Por eso el valor es conservador — unas 11 horas.
+ */
+const VENTANA_LEDGERS = 8_000
+
+/**
+ * Los eventos que el contrato emitió para un fusible. Esto es el registro de
+ * verdad: no lo escribe la aplicación, vive en la red y cualquiera lo puede
+ * leer. Por eso sobrevive a recargar la página.
+ *
+ * Los rechazos no aparecen aquí: revierten la transacción y sus eventos se
+ * descartan.
+ */
+export async function leerEventos(idFusible: number): Promise<EventoCadena[]> {
+  const ultimo = await server.getLatestLedger()
+  const desde = Math.max(1, ultimo.sequence - VENTANA_LEDGERS)
+
+  const r = await server.getEvents({
+    startLedger: desde,
+    filters: [{ type: 'contract', contractIds: [CONTRACT_ID] }],
+    limit: 200,
+  })
+
+  const salida: EventoCadena[] = []
+
+  for (const e of r.events) {
+    let topics: unknown[]
+    let valor: unknown
+    try {
+      topics = e.topic.map((t) => scValToNative(t))
+      valor = scValToNative(e.value)
+    } catch {
+      continue
+    }
+
+    const tipo = topics[0] as EventoCadena['tipo']
+    // En `creado` el id viaja en el valor; en los demás, en el topic.
+    const id =
+      tipo === 'creado'
+        ? Number((valor as [number, bigint])[0])
+        : Number(topics[1])
+    if (id !== idFusible) continue
+
+    const base = { tipo, idFusible: id, hash: e.txHash, ledger: e.ledger }
+
+    if (tipo === 'creado') {
+      salida.push({ ...base, monto: (valor as [number, bigint])[1] })
+    } else if (tipo === 'pago') {
+      const [monto] = valor as [bigint, bigint]
+      salida.push({ ...base, monto, destino: String(topics[2]) })
+    } else {
+      salida.push({ ...base, monto: valor as bigint })
+    }
+  }
+
+  return salida.sort((a, b) => b.ledger - a.ledger)
+}
