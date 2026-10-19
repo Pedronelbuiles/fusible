@@ -9,6 +9,12 @@
 
 ## Evidencia verificable
 
+> Los enlaces de esta sección son los de la entrega del 19 de octubre y
+> siguen siendo válidos: las transacciones son inmutables. Si la testnet se
+> reinicia o se despliega una versión nueva, el contrato **vigente** es el
+> que indica [`proyecto.md`](../proyecto.md); el procedimiento para volver a
+> levantarlo está en [`recuperacion.md`](../recuperacion.md).
+
 Lo declarado en la semana 3 fue **opción A, contrato propio**. Está escrito,
 desplegado y conectado al front. El ciclo completo —crear el fusible,
 fondearlo, pagar, rechazar, cortar y retirar— ocurre contra la red, sin nada

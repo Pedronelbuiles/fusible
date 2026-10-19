@@ -59,6 +59,7 @@ frontend/            Interfaz del producto (Vite + React + TypeScript)
 docs/
 ├── competencia.md   Alternativas que ya existen y qué sigue siendo distinto
 ├── costos.md        Cuánto cuesta cada operación, medido
+├── recuperacion.md  Cómo volver a levantarlo si la testnet se reinicia
 ├── roadmap.md       Qué sigue, antes y después del cierre
 ├── entrevistas/     Notas de validación con usuarios
 ├── proyecto.md      Este documento
@@ -70,7 +71,7 @@ docs/
 ```
 
 El contrato está desplegado en testnet:
-[CCDIWMOI…UWITZS35](https://stellar.expert/explorer/testnet/contract/CCDIWMOIELVUW77ZA5WEOPUHYYT6D36XIT7XGGU3NP6APTWMUWITZS35)
+[CDY34ZUL…6OPUNA733](https://stellar.expert/explorer/testnet/contract/CDY34ZULKDNOVCAGKXTCU7HE6SCAUOSQ4B5T7V4RMP7FYYU6OPUNA733)
 
 **Empieza por** [`semana1/ProblemBrief.md`](semana1/ProblemBrief.md). Para
 correr el proyecto, ver el [README](../README.md).
