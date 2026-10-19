@@ -68,23 +68,62 @@ registro no los administra ninguna de las partes. Ese sigue siendo
 arquitectónico y no se cierra bajando un precio. Pero hay que dejar de decir
 que esto es más barato, porque no lo es.
 
-## Por qué cuesta tanto, y qué se puede hacer
+## El intento de optimización que falló
 
-El `pay` actual **reescribe el fusible entero en cada pago** — incluida la
-lista de destinos permitidos, que nunca cambia. El resource fee cobra por
-bytes escritos, así que estamos pagando por reescribir datos inmutables en
-cada transacción.
+**Hipótesis:** `pay` reescribía el fusible entero, incluida la lista de
+destinos; separar lo inmutable de lo mutable debería abaratarlo.
 
-**La optimización evidente:** separar lo que nunca cambia (dueño, agente,
-token, topes, destinos, vigencia) de lo único que sí cambia (`gastado` y
-`cortado`). Así `pay` escribiría un entero en vez de una estructura completa.
+**Se implementó y se midió. No sirvió.**
 
-**Cuánto bajaría: no lo sé.** No está medido y no voy a estimarlo. Hay que
-implementarlo y volver a correr `npm run medir`.
+| | Antes | Después |
+|---|---:|---:|
+| `pay` | 932.854 | 931.229 |
+| `create_fuse` | 7.094.935 | 8.383.428 |
 
-Incluso en el mejor caso hay un piso que no se puede bajar: leer el estado,
-ejecutar el contrato y transferir el token tienen un costo propio. Es
-plausible que después de optimizar siga siendo más caro que AgentCore.
+0,17% de mejora en el pago, y un 18% **más caro** al crear, porque ahora se
+escriben dos entradas en vez de una. El experimento se revirtió.
+
+**Por qué la hipótesis era falsa.** El desglose de recursos de la simulación
+lo deja claro:
+
+| Operación | Fee | Instrucciones | Bytes escritos | Entradas RW |
+|---|---:|---:|---:|---:|
+| `pay` | 931.129 | 1.512.556 | 644 | 4 |
+| `fund` | 13.490 | 978.880 | 568 | 3 |
+| `revoke` | 8.517 | 757.150 | 200 | 1 |
+
+`pay` escribe 644 bytes y `fund` 568 — prácticamente lo mismo — pero `pay`
+cuesta **69 veces más**. El costo no está en los bytes que escribimos
+nosotros.
+
+**Qué no sé.** No identifiqué qué lo encarece. La pista es que `pay` toca una
+entrada de lectura-escritura más que `fund`, y la diferencia entre ambas es
+el sentido de la transferencia: `fund` mueve del dueño al contrato, `pay`
+mueve del contrato a una cuenta externa. Sospecho que el costo está en esa
+transferencia saliente del SAC, no en nuestro contrato, pero **es una
+sospecha sin comprobar**.
+
+Comprobarlo requiere aislar la transferencia: medir un `pay` que valide las
+reglas pero no transfiera, y comparar. Queda pendiente.
+
+## Qué se puede hacer todavía
+
+Descartada la hipótesis de los bytes escritos, quedan dos vías, ninguna
+medida:
+
+1. **Aislar el costo de la transferencia.** Si viene del SAC y no de nuestro
+   contrato, no hay nada que optimizar de nuestro lado: es el precio de
+   mover un activo en Stellar, y afecta por igual a cualquier producto que
+   mueva dinero en esta red.
+2. **Acumular pagos.** Si el costo está en la transferencia, hacer una por
+   cada petición del agente es lo más caro posible. Un modelo de canal
+   —acumular muchas peticiones y liquidar una vez— lo esquiva. Es
+   exactamente lo que hace **MPP Session**, el tercer camino de la
+   documentación de pagos agénticos de Stellar, que descartamos por
+   complejidad al diseñar.
+
+La segunda es la que puede cambiar el resultado de verdad, y cambia la
+arquitectura, no un detalle.
 
 ## Matices que no medí
 

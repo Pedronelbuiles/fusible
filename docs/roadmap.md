@@ -94,9 +94,13 @@ forma de volver a encontrar el fusible que creaste.
 > contra USD 0,005 de AgentCore, que además regala 5.000 operaciones al mes.
 > El argumento de costo no existe; ver [`costos.md`](costos.md).
 >
-> Siguiente paso derivado: `pay` reescribe el fusible completo en cada pago,
-> incluida la lista de destinos que nunca cambia. Separar lo inmutable de lo
-> mutable debería bajarlo — cuánto, no está medido.
+> **Se intentó optimizar y no funcionó.** Separar las reglas inmutables del
+> saldo mutable dio 0,17% de mejora y encareció la creación un 18%; se
+> revirtió. El desglose muestra que el costo no está en los bytes que
+> escribimos: `pay` y `fund` escriben casi lo mismo y `pay` cuesta 69 veces
+> más. La sospecha, sin comprobar, es que viene de la transferencia saliente
+> del token. La vía que sí podría cambiarlo es acumular pagos en un canal
+> (MPP Session) en vez de uno por petición.
 
 #### Lo que decía el plan
 
