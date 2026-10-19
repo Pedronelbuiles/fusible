@@ -36,7 +36,14 @@ interface Fallo {
   mensaje: string
 }
 
-export default function PanelRed({ firmante }: { firmante: Firmante }) {
+export default function PanelRed({
+  firmante,
+  onPantalla,
+}: {
+  firmante: Firmante
+  /** Avisa qué pantalla se está mostrando, para lanzar el recorrido. */
+  onPantalla: (nombre: 'formulario' | 'panel') => void
+}) {
   const [idFusible, setIdFusible] = useState<number | null>(null)
   const [mios, setMios] = useState<number[]>([])
   const [estado, setEstado] = useState<EstadoCadena | null>(null)
@@ -174,6 +181,13 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
       setProceso(null)
     }
   }
+
+  // Qué pantalla se ve ahora. El recorrido de cada una es distinto, así que
+  // App necesita saberlo para lanzarlo al entrar.
+  const pantalla = !estado || creando ? 'formulario' : 'panel'
+  useEffect(() => {
+    if (!cargando) onPantalla(pantalla)
+  }, [pantalla, cargando, onPantalla])
 
   // ---- render ----
 

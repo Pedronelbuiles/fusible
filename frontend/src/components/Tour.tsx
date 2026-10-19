@@ -7,24 +7,6 @@ export interface PasoTour {
   texto: string
 }
 
-const VISTO = 'fusible.tour.visto'
-
-export const yaVioElTour = () => {
-  try {
-    return localStorage.getItem(VISTO) === '1'
-  } catch {
-    return false
-  }
-}
-
-const marcarVisto = () => {
-  try {
-    localStorage.setItem(VISTO, '1')
-  } catch {
-    /* modo privado: que el tour vuelva a salir no rompe nada */
-  }
-}
-
 interface Hueco {
   top: number
   left: number
@@ -80,10 +62,7 @@ export default function Tour({
 
   const paso = visibles[i]
 
-  const cerrar = useCallback(() => {
-    marcarVisto()
-    onCerrar()
-  }, [onCerrar])
+  const cerrar = useCallback(() => onCerrar(), [onCerrar])
 
   const medir = useCallback(() => {
     if (!paso) return
