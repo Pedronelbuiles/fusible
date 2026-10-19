@@ -419,3 +419,40 @@ code {
 
 .firmante button.enlace:hover,
 .firmante a:hover { text-decoration: underline; }
+
+/* ---------- mis fusibles ---------- */
+
+.mis-fusibles {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 18px;
+  font-size: 0.84rem;
+  color: var(--suave);
+}
+
+.mis-fusibles > span { margin-right: 4px; }
+
+.mis-fusibles button {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  color: var(--suave);
+  border-radius: 8px;
+  padding: 5px 13px;
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.mis-fusibles button:hover:not(:disabled) { border-color: var(--ambar); color: var(--texto); }
+.mis-fusibles button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.mis-fusibles button.activo {
+  background: var(--ambar-tenue);
+  border-color: var(--ambar);
+  color: var(--ambar);
+  font-weight: 600;
+}
+
+.mis-fusibles button.nuevo { border-style: dashed; }

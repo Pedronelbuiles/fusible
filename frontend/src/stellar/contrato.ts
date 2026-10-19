@@ -188,3 +188,6 @@ export const pagar = (id: number, destino: string, monto: bigint) =>
 
 export const leerEstado = (id: number) => leer<EstadoCadena>('estado', u32(id))
 export const leerTotal = () => leer<number>('total')
+
+/** Los fusibles de una dirección, del más viejo al más nuevo. */
+export const leerDeDueno = (owner: string) => leer<number[]>('de_dueno', dir(owner))

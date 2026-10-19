@@ -15,6 +15,7 @@ import {
   crearFusible,
   duenoDemo,
   fondear,
+  leerDeDueno,
   leerEstado,
   leerTotal,
   pagar,
@@ -50,6 +51,7 @@ export default function PanelRed() {
   const [firmante, setFirmante] = useState<Firmante>(() => duenoDemo())
   const [freighterDisponible, setFreighterDisponible] = useState(false)
   const [idFusible, setIdFusible] = useState<number | null>(null)
+  const [mios, setMios] = useState<number[]>([])
   const [estado, setEstado] = useState<EstadoCadena | null>(null)
   const [cargando, setCargando] = useState(true)
   const [paso, setPaso] = useState<string | null>(null)
@@ -65,6 +67,19 @@ export default function PanelRed() {
     setIdFusible(id)
     setFallo(null)
   }, [])
+
+  /** Los fusibles de quien está firmando ahora mismo. */
+  const refrescarMios = useCallback(async (direccion: string) => {
+    try {
+      setMios(await leerDeDueno(direccion))
+    } catch {
+      setMios([])
+    }
+  }, [])
+
+  useEffect(() => {
+    void refrescarMios(firmante.direccion)
+  }, [firmante, refrescarMios])
 
   useEffect(() => {
     void (async () => {
@@ -122,6 +137,7 @@ export default function PanelRed() {
       })
 
       await cargar(r.valor)
+      await refrescarMios(firmante.direccion)
       setCreando(false)
     } catch (e) {
       const err = e as ErrorContrato
@@ -219,6 +235,28 @@ export default function PanelRed() {
         disponible={freighterDisponible}
         onConectar={() => void conectar()}
       />
+      {mios.length > 0 && (
+        <nav className="mis-fusibles">
+          <span>Mis fusibles</span>
+          {mios.map((n) => (
+            <button
+              key={n}
+              className={n === idFusible ? 'activo' : ''}
+              disabled={paso !== null}
+              onClick={() => void cargar(n)}
+            >
+              #{n}
+            </button>
+          ))}
+          <button
+            className="nuevo"
+            disabled={paso !== null}
+            onClick={() => setCreando(true)}
+          >
+            + nuevo
+          </button>
+        </nav>
+      )}
       <main className="tablero">
       <div className="columna">
         <section className="tarjeta">

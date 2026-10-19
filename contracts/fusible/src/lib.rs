@@ -27,6 +27,8 @@ pub enum DataKey {
     Contador,
     /// Un fusible. Persistente: su estado no se puede recrear.
     Fuse(u32),
+    /// Los fusibles de un dueño, para poder listarlos sin recorrer todo.
+    DelDueno(Address),
 }
 
 #[contracttype]
@@ -73,6 +75,21 @@ fn cargar(env: &Env, id: u32) -> Result<Fusible, Error> {
         .persistent()
         .get(&DataKey::Fuse(id))
         .ok_or(Error::NoExiste)
+}
+
+/// Agrega el fusible al índice de su dueño. Solo se llama al crearlo.
+fn indexar(env: &Env, owner: &Address, id: u32) {
+    let k = DataKey::DelDueno(owner.clone());
+    let mut lista: Vec<u32> = env
+        .storage()
+        .persistent()
+        .get(&k)
+        .unwrap_or_else(|| Vec::new(env));
+    lista.push_back(id);
+    env.storage().persistent().set(&k, &lista);
+    env.storage()
+        .persistent()
+        .extend_ttl(&k, TTL_UMBRAL, TTL_EXTENSION);
 }
 
 fn guardar(env: &Env, f: &Fusible) {
@@ -136,6 +153,7 @@ impl FusibleContract {
             cortado: false,
         };
         guardar(&env, &f);
+        indexar(&env, &owner, id);
 
         env.events()
             .publish((symbol_short!("creado"), owner, agent), (id, tope_total));
@@ -250,6 +268,15 @@ impl FusibleContract {
     pub fn disponible(env: Env, id: u32) -> Result<i128, Error> {
         let f = cargar(&env, id)?;
         Ok(f.tope_total - f.gastado)
+    }
+
+    /// Los identificadores de los fusibles de un dueño, del más viejo al más
+    /// nuevo. Vacío si esa dirección nunca creó ninguno.
+    pub fn de_dueno(env: Env, owner: Address) -> Vec<u32> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::DelDueno(owner))
+            .unwrap_or_else(|| Vec::new(&env))
     }
 
     /// Cuántos fusibles se han creado. El último creado tiene este id.

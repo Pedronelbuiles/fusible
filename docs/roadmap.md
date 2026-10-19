@@ -66,7 +66,17 @@ lo que vas a usar al grabar el video.
 
 *Esfuerzo estimado, no medido: medio. Peor caso, un día completo.*
 
-### 2. Que cada quien vea sus propios fusibles
+### 2. Que cada quien vea sus propios fusibles · **hecho el 19 de octubre**
+
+> El contrato guarda ahora un índice por dueño (`de_dueno`) y el front lista
+> los fusibles de quien está firmando, con un selector para moverse entre
+> ellos. Verificado contra la red: dos fusibles creados, cada uno con sus
+> propias reglas, y el selector alterna bien entre ambos.
+>
+> **Contrato nuevo:** `CD2ZSG35QKJGNN4EERA55DW62JEWFB567TJYW7IKL5HD377WPRWX3SI6`
+> — el anterior sigue desplegado y el entregable 4 apunta a él.
+
+#### Lo que decía el plan
 
 **Qué:** el contrato guarda un índice de fusibles por dueño y el front lista
 los del usuario conectado.

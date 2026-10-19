@@ -183,3 +183,46 @@ fn no_existe_un_fusible_sin_crear() {
     let r = c.cliente.try_estado(&999);
     assert_eq!(r, Err(Ok(Error::NoExiste)));
 }
+
+#[test]
+fn cada_dueno_ve_solo_sus_fusibles() {
+    let c = montar();
+    let otro = Address::generate(&c.env);
+    let token = c.cliente.estado(&c.id).token;
+
+    // El primer dueño crea un segundo fusible.
+    let id2 = c.cliente.create_fuse(
+        &c.owner,
+        &Address::generate(&c.env),
+        &token,
+        &300,
+        &100,
+        &vec![&c.env, c.permitido.clone()],
+        &(c.env.ledger().timestamp() + 86_400),
+    );
+
+    // Otra persona crea el suyo.
+    let ajeno = c.cliente.create_fuse(
+        &otro,
+        &Address::generate(&c.env),
+        &token,
+        &700,
+        &700,
+        &vec![&c.env, c.permitido.clone()],
+        &(c.env.ledger().timestamp() + 86_400),
+    );
+
+    let mios = c.cliente.de_dueno(&c.owner);
+    assert_eq!(mios, vec![&c.env, c.id, id2]);
+    assert!(!mios.contains(ajeno));
+
+    let suyos = c.cliente.de_dueno(&otro);
+    assert_eq!(suyos, vec![&c.env, ajeno]);
+}
+
+#[test]
+fn una_direccion_sin_fusibles_devuelve_lista_vacia() {
+    let c = montar();
+    let nadie = Address::generate(&c.env);
+    assert_eq!(c.cliente.de_dueno(&nadie).len(), 0);
+}
