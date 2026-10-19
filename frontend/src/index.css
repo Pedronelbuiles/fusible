@@ -687,3 +687,47 @@ code {
   color: var(--suave);
   font-size: 0.86rem;
 }
+
+/* ---------- agente autónomo ---------- */
+
+.agente-auto .boton { margin-top: 4px; }
+
+.tarea { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 7px; }
+
+.tarea li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.87rem;
+  color: var(--suave);
+}
+
+.tarea li .marca {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--borde);
+  display: grid; place-items: center;
+  font-size: 0.68rem;
+  flex: none;
+}
+
+.tarea li.pendiente { opacity: 0.45; }
+.tarea li.activo { color: var(--texto); }
+.tarea li.activo .marca { border-color: var(--ambar); color: var(--ambar); animation: latir 1s ease-in-out infinite; }
+.tarea li.hecho .marca { border-color: var(--verde); color: var(--verde); }
+.tarea li.frenado { color: var(--texto); }
+.tarea li.frenado .marca { border-color: var(--rojo); color: var(--rojo); }
+.tarea li .porque { color: var(--rojo); font-size: 0.78rem; }
+
+@keyframes latir { 50% { opacity: 0.35 } }
+
+.veredicto {
+  margin: 18px 0 14px;
+  padding: 13px 15px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.veredicto.frenado { background: #f0564a14; border-left: 3px solid var(--rojo); }
+.veredicto.ok { background: #4ade8012; border-left: 3px solid var(--verde); }

@@ -139,7 +139,23 @@ hipótesis y sus criterios ya escritos en
 Si **H4** cae —que nadie acepte mover presupuesto a un activo digital— el
 resto de esta hoja de ruta cambia de raíz. Por eso va primero.
 
-### Semana 2 — El agente que paga de verdad
+### Semana 2 — El agente que paga de verdad · **adelantado el 19 de octubre**
+
+> Ya está construido y funcionando contra testnet: un agente con una tarea
+> de 8 pasos que paga por cada uno y **no comprueba su saldo ni sabe cuándo
+> parar**. En la prueba completó 6 pasos, gastó exactamente el tope y el
+> contrato lo detuvo en el séptimo. Cada pago dejó su hash.
+>
+> **Lo que NO está hecho:** x402. La skill oficial de Stellar deja claro que
+> exige un facilitador externo con API key, un servidor Node y trustlines de
+> USDC en ambas cuentas. Lo que sí está es la pieza que x402 deja a la
+> aplicación: el control de presupuesto. El agente paga directo al contrato.
+>
+> **Tampoco hay un modelo de lenguaje real.** Los pasos de la tarea son
+> etiquetas; los pagos son reales. Conectar un LLM cuesta dinero y esa
+> decisión no se toma sin fijar antes el gasto máximo.
+
+#### Lo que decía el plan
 
 Aquí es donde el producto deja de ser una demostración.
 

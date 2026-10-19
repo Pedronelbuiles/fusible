@@ -23,6 +23,7 @@ import {
 import type { Firmante } from '../stellar/firmante'
 import { corto, money } from '../dominio'
 import { ModalError, ModalProceso, type PasoProceso } from './Modal'
+import AgenteAutonomo from './AgenteAutonomo'
 import Registro, { type Rechazo } from './Registro'
 import Tour, { PASOS_TOUR, yaVioElTour } from './Tour'
 
@@ -347,6 +348,13 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
               </p>
             )}
           </section>
+
+          <AgenteAutonomo
+            idFusible={estado.id}
+            costePorPaso={Math.min(porOp, Math.max(0.5, tope / 6))}
+            bloqueado={sinPagos}
+            onPagoHecho={() => cargar(estado.id)}
+          />
 
           <section className="tarjeta consola" data-tour="agente">
             <h2>Agente de demostración</h2>

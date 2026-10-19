@@ -172,8 +172,14 @@ export const PASOS_TOUR: PasoTour[] = [
       'El corte es inmediato y definitivo: no hay forma de reactivar un fusible cortado. Lo que no se gastó vuelve a tu billetera cuando quieras.',
   },
   {
+    ancla: 'autonomo',
+    titulo: 'Suéltalo a trabajar',
+    texto:
+      'Aquí está el punto de todo: el agente tiene una tarea y paga por cada paso, pero no comprueba su saldo ni sabe cuándo parar. Quien lo detiene es el contrato, no él y no tú.',
+  },
+  {
     ancla: 'agente',
-    titulo: 'El agente de demostración',
+    titulo: 'Probar las reglas una a una',
     texto:
       'Simula el programa que trabaja solo. El primer botón hace un pago que cumple las reglas; los otros dos intentan saltárselas, para que veas al contrato rechazarlos.',
   },
