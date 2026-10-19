@@ -30,7 +30,7 @@ pub enum DataKey {
 }
 
 #[contracttype]
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Fusible {
     pub id: u32,
     pub owner: Address,
@@ -191,11 +191,7 @@ impl FusibleContract {
             return Err(Error::ExcedeTopeTotal);
         }
 
-        token::Client::new(&env, &f.token).transfer(
-            &env.current_contract_address(),
-            &to,
-            &amount,
-        );
+        token::Client::new(&env, &f.token).transfer(&env.current_contract_address(), &to, &amount);
 
         f.gastado += amount;
         guardar(&env, &f);

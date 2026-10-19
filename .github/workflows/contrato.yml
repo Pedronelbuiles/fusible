@@ -1,0 +1,53 @@
+name: Contrato
+
+on:
+  push:
+    paths:
+      - 'contracts/**'
+      - '.github/workflows/contrato.yml'
+  pull_request:
+    paths:
+      - 'contracts/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Pruebas y compilación a wasm
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # En Linux no hace falta pelear con el linker: por eso las pruebas
+      # corren aquí y no en la máquina de desarrollo, que es Windows.
+      - name: Instalar Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+
+      - name: Cachear dependencias
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contracts
+
+      - name: Formato
+        run: cargo fmt --check
+
+      - name: Pruebas
+        run: cargo test --verbose
+
+      - name: Compilar a wasm
+        run: cargo build --target wasm32v1-none --release
+
+      - name: Tamaño del wasm
+        run: ls -lh target/wasm32v1-none/release/fusible.wasm
+
+      - name: Guardar el wasm
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusible-wasm
+          path: contracts/target/wasm32v1-none/release/fusible.wasm
+          if-no-files-found: error
