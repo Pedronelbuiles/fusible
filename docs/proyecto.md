@@ -68,7 +68,7 @@ docs/
 ```
 
 El contrato está desplegado en testnet:
-[CBRAM7QF…ZGOK5WCI](https://stellar.expert/explorer/testnet/contract/CBRAM7QFZ4QJOSO7CVZGRYQ47I5UWOV4ZFB4TBV5DCG3KN22ZGOK5WCI)
+[CCDIWMOI…UWITZS35](https://stellar.expert/explorer/testnet/contract/CCDIWMOIELVUW77ZA5WEOPUHYYT6D36XIT7XGGU3NP6APTWMUWITZS35)
 
 **Empieza por** [`semana1/ProblemBrief.md`](semana1/ProblemBrief.md). Para
 correr el proyecto, ver el [README](../README.md).

@@ -1,9 +1,10 @@
 #![no_std]
-//! Fusible: un presupuesto con reglas para un agente autónomo.
+//! Fusible: presupuestos con reglas para agentes autónomos.
 //!
-//! Una instancia del contrato = un fusible. El dueño lo crea fijando el tope
-//! total, el tope por operación, la lista de destinos permitidos y la ventana
-//! de vigencia. A partir de ahí nadie puede cambiar esas reglas, tampoco él.
+//! Un mismo contrato administra muchos fusibles. Cada uno lo crea su dueño
+//! fijando el tope total, el tope por operación, la lista de destinos
+//! permitidos y la ventana de vigencia. A partir de ahí nadie puede cambiar
+//! esas reglas, tampoco él.
 //!
 //! El orden de validación de `pay` es el mismo que el de
 //! `frontend/src/dominio.ts`, a propósito: la interfaz no debe prometer algo
@@ -13,14 +14,25 @@ use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, Vec,
 };
 
+/// ~5 s por ledger. Se usa para decidir cuánto extender la vida de los datos.
+const LEDGERS_POR_DIA: u32 = 17_280;
+/// Si a un fusible le quedan menos de 30 días de vida, se le extiende.
+const TTL_UMBRAL: u32 = LEDGERS_POR_DIA * 30;
+/// Cada extensión lo lleva a 90 días.
+const TTL_EXTENSION: u32 = LEDGERS_POR_DIA * 90;
+
 #[contracttype]
 pub enum DataKey {
-    Fusible,
+    /// Cuántos fusibles se han creado. Vive con el contrato.
+    Contador,
+    /// Un fusible. Persistente: su estado no se puede recrear.
+    Fuse(u32),
 }
 
 #[contracttype]
 #[derive(Clone)]
 pub struct Fusible {
+    pub id: u32,
     pub owner: Address,
     pub agent: Address,
     pub token: Address,
@@ -37,8 +49,10 @@ pub struct Fusible {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum Error {
-    YaInicializado = 1,
-    NoInicializado = 2,
+    /// No existe un fusible con ese identificador.
+    NoExiste = 1,
+    /// Quien llama no es el dueño de este fusible.
+    NoEsElDueno = 2,
     ParametrosInvalidos = 3,
     /// El dueño cortó el fusible. Es definitivo.
     FusibleCortado = 4,
@@ -54,15 +68,19 @@ pub enum Error {
     SinRemanente = 10,
 }
 
-fn cargar(env: &Env) -> Result<Fusible, Error> {
+fn cargar(env: &Env, id: u32) -> Result<Fusible, Error> {
     env.storage()
-        .instance()
-        .get(&DataKey::Fusible)
-        .ok_or(Error::NoInicializado)
+        .persistent()
+        .get(&DataKey::Fuse(id))
+        .ok_or(Error::NoExiste)
 }
 
 fn guardar(env: &Env, f: &Fusible) {
-    env.storage().instance().set(&DataKey::Fusible, f);
+    let k = DataKey::Fuse(f.id);
+    env.storage().persistent().set(&k, f);
+    env.storage()
+        .persistent()
+        .extend_ttl(&k, TTL_UMBRAL, TTL_EXTENSION);
 }
 
 #[contract]
@@ -70,9 +88,9 @@ pub struct FusibleContract;
 
 #[contractimpl]
 impl FusibleContract {
-    /// Crea el fusible. Solo se puede llamar una vez: los montos y la lista
-    /// de destinos quedan fijos para siempre.
-    pub fn init(
+    /// Crea un fusible y devuelve su identificador. Los montos y la lista de
+    /// destinos quedan fijos: no hay ninguna función que los modifique.
+    pub fn create_fuse(
         env: Env,
         owner: Address,
         agent: Address,
@@ -81,10 +99,7 @@ impl FusibleContract {
         tope_por_op: i128,
         destinos: Vec<Address>,
         vigencia_hasta: u64,
-    ) -> Result<(), Error> {
-        if env.storage().instance().has(&DataKey::Fusible) {
-            return Err(Error::YaInicializado);
-        }
+    ) -> Result<u32, Error> {
         owner.require_auth();
 
         if tope_total <= 0
@@ -96,7 +111,19 @@ impl FusibleContract {
             return Err(Error::ParametrosInvalidos);
         }
 
+        let id: u32 = env
+            .storage()
+            .instance()
+            .get(&DataKey::Contador)
+            .unwrap_or(0u32)
+            + 1;
+        env.storage().instance().set(&DataKey::Contador, &id);
+        env.storage()
+            .instance()
+            .extend_ttl(TTL_UMBRAL, TTL_EXTENSION);
+
         let f = Fusible {
+            id,
             owner: owner.clone(),
             agent: agent.clone(),
             token,
@@ -111,13 +138,13 @@ impl FusibleContract {
         guardar(&env, &f);
 
         env.events()
-            .publish((symbol_short!("creado"), owner, agent), tope_total);
-        Ok(())
+            .publish((symbol_short!("creado"), owner, agent), (id, tope_total));
+        Ok(id)
     }
 
-    /// El dueño deposita el presupuesto en el contrato.
-    pub fn fund(env: Env, amount: i128) -> Result<(), Error> {
-        let mut f = cargar(&env)?;
+    /// El dueño deposita el presupuesto del fusible.
+    pub fn fund(env: Env, id: u32, amount: i128) -> Result<i128, Error> {
+        let mut f = cargar(&env, id)?;
         f.owner.require_auth();
 
         if amount <= 0 {
@@ -134,15 +161,15 @@ impl FusibleContract {
         guardar(&env, &f);
 
         env.events()
-            .publish((symbol_short!("fondeado"),), amount);
-        Ok(())
+            .publish((symbol_short!("fondeado"), id), amount);
+        Ok(f.fondeado)
     }
 
     /// El agente paga a un destino. Valida contra TODAS las reglas antes de
     /// mover un solo stroop. Si alguna falla, la transacción revierte y el
-    /// error queda registrado en la red con su código.
-    pub fn pay(env: Env, to: Address, amount: i128) -> Result<i128, Error> {
-        let mut f = cargar(&env)?;
+    /// error queda con su código.
+    pub fn pay(env: Env, id: u32, to: Address, amount: i128) -> Result<i128, Error> {
+        let mut f = cargar(&env, id)?;
         f.agent.require_auth();
 
         if amount <= 0 {
@@ -174,14 +201,13 @@ impl FusibleContract {
         guardar(&env, &f);
 
         env.events()
-            .publish((symbol_short!("pago"), to), (amount, f.gastado));
+            .publish((symbol_short!("pago"), id, to), (amount, f.gastado));
         Ok(f.gastado)
     }
 
-    /// Corte en caliente. Solo el dueño, y es irreversible: no hay forma de
-    /// reactivar un fusible cortado.
-    pub fn revoke(env: Env) -> Result<(), Error> {
-        let mut f = cargar(&env)?;
+    /// Corte en caliente. Solo el dueño, y es irreversible.
+    pub fn revoke(env: Env, id: u32) -> Result<(), Error> {
+        let mut f = cargar(&env, id)?;
         f.owner.require_auth();
 
         if f.cortado {
@@ -191,13 +217,13 @@ impl FusibleContract {
         guardar(&env, &f);
 
         env.events()
-            .publish((symbol_short!("cortado"),), f.gastado);
+            .publish((symbol_short!("cortado"), id), f.gastado);
         Ok(())
     }
 
     /// Devuelve al dueño lo que quedó sin gastar.
-    pub fn sweep(env: Env) -> Result<i128, Error> {
-        let mut f = cargar(&env)?;
+    pub fn sweep(env: Env, id: u32) -> Result<i128, Error> {
+        let mut f = cargar(&env, id)?;
         f.owner.require_auth();
 
         let remanente = f.fondeado - f.gastado;
@@ -215,24 +241,27 @@ impl FusibleContract {
         guardar(&env, &f);
 
         env.events()
-            .publish((symbol_short!("retiro"),), remanente);
+            .publish((symbol_short!("retiro"), id), remanente);
         Ok(remanente)
     }
 
     // ---- lecturas: gratis, no exigen firma ----
 
-    pub fn estado(env: Env) -> Result<Fusible, Error> {
-        cargar(&env)
+    pub fn estado(env: Env, id: u32) -> Result<Fusible, Error> {
+        cargar(&env, id)
     }
 
-    pub fn gastado(env: Env) -> Result<i128, Error> {
-        Ok(cargar(&env)?.gastado)
-    }
-
-    /// Cuánto queda por gastar dentro del tope.
-    pub fn disponible(env: Env) -> Result<i128, Error> {
-        let f = cargar(&env)?;
+    pub fn disponible(env: Env, id: u32) -> Result<i128, Error> {
+        let f = cargar(&env, id)?;
         Ok(f.tope_total - f.gastado)
+    }
+
+    /// Cuántos fusibles se han creado. El último creado tiene este id.
+    pub fn total(env: Env) -> u32 {
+        env.storage()
+            .instance()
+            .get(&DataKey::Contador)
+            .unwrap_or(0u32)
     }
 }
 
