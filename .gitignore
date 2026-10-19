@@ -7,3 +7,6 @@ Thumbs.db
 
 # Pruebas manuales, material de trabajo local
 pruebas/
+
+# Rust / Soroban
+contracts/target/

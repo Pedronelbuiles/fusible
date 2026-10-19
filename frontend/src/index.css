@@ -340,3 +340,40 @@ code {
   .historial { position: static; }
   .eventos { max-height: none; }
 }
+
+/* ---------- selector de modo ---------- */
+
+.modos {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.modos button {
+  background: none;
+  border: none;
+  color: var(--suave);
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 7px 15px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.modos button.activo {
+  background: var(--ambar-tenue);
+  color: var(--ambar);
+  font-weight: 600;
+}
+
+.modos button:hover:not(.activo) { color: var(--texto); }
+
+.historial a,
+.tarjeta a { color: var(--ambar); text-decoration: none; }
+.historial a:hover,
+.tarjeta a:hover { text-decoration: underline; }

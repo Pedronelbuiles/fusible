@@ -46,7 +46,7 @@ Blockchain Acceleration Foundation, Ruta N Medellín y Stellar
 | 1 | Problem brief | Entregado |
 | 2 | Product blueprint | Entregado |
 | 3 | Functional proof | Entregado |
-| 4 | Validated MVP | Pendiente |
+| 4 | Validated MVP | Entregado |
 | 5 | Demo package | Pendiente |
 
 ---
@@ -54,6 +54,7 @@ Blockchain Acceleration Foundation, Ruta N Medellín y Stellar
 ## Estructura
 
 ```
+contracts/           Contrato `fusible` en Soroban (Rust)
 frontend/            Interfaz del producto (Vite + React + TypeScript)
 docs/
 ├── competencia.md   Alternativas que ya existen y qué sigue siendo distinto
@@ -62,11 +63,12 @@ docs/
 ├── semana1/         Problem brief y propuesta individual
 ├── semana2/         Product blueprint, historias, lean canvas y arquitectura
 ├── semana3/         Documentación del front y decisión técnica
-├── semana4/         Validated MVP
+├── semana4/         MVP funcional y evidencia en testnet
 └── semana5/         Demo package
 ```
 
-En la semana 4 se incorpora `contracts/` con el contrato en Soroban.
+El contrato está desplegado en testnet:
+[CBRAM7QF…ZGOK5WCI](https://stellar.expert/explorer/testnet/contract/CBRAM7QFZ4QJOSO7CVZGRYQ47I5UWOV4ZFB4TBV5DCG3KN22ZGOK5WCI)
 
 **Empieza por** [`semana1/ProblemBrief.md`](semana1/ProblemBrief.md). Para
 correr el proyecto, ver el [README](../README.md).

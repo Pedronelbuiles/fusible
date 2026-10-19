@@ -7,6 +7,8 @@ import CrearFusible from './components/CrearFusible'
 import Panel from './components/Panel'
 import ConsolaAgente from './components/ConsolaAgente'
 import Historial from './components/Historial'
+import PanelRed from './components/PanelRed'
+import { hayContrato } from './stellar/config'
 
 const sufijo = 'K2MXQPL4RVZT6YH3NBWSD5FGJC7EUA9TKM2QRXV1BCDEFGHJKLMNPRS'
 const dir = (prefijo: string) => (prefijo + sufijo).slice(0, 56)
@@ -26,6 +28,7 @@ export const DESTINO_HOSTIL: Destino = {
 }
 
 export default function App() {
+  const [modo, setModo] = useState<Modo>(hayContrato() ? 'red' : 'simulado')
   const [conectado, setConectado] = useState(false)
   const [fusible, setFusible] = useState<Fusible | null>(null)
   const [eventos, setEventos] = useState<Evento[]>([])
@@ -126,9 +129,21 @@ export default function App() {
     if (fusible.estado === 'cortado' || sinCupo) setCorriendo(false)
   }, [fusible, corriendo])
 
+  if (modo === 'red') {
+    return (
+      <div className="app">
+        <Encabezado />
+        <Modos modo={modo} setModo={setModo} />
+        <PanelRed />
+        <Pie />
+      </div>
+    )
+  }
+
   return (
     <div className="app">
       <Encabezado />
+      <Modos modo={modo} setModo={setModo} />
 
       {!conectado && <Conectar onConectar={() => setConectado(true)} />}
 
@@ -154,11 +169,45 @@ export default function App() {
         </main>
       )}
 
-      <footer className="pie">
-        Prototipo de interfaz · los datos son simulados en el navegador · la
-        lógica de reglas vive en <code>src/dominio.ts</code> y se traduce a un
-        contrato Soroban en la semana 4
-      </footer>
+      <Pie />
     </div>
+  )
+}
+
+type Modo = 'red' | 'simulado'
+
+function Modos({
+  modo,
+  setModo,
+}: {
+  modo: Modo
+  setModo: (m: Modo) => void
+}) {
+  if (!hayContrato()) return null
+  return (
+    <nav className="modos">
+      <button
+        className={modo === 'red' ? 'activo' : ''}
+        onClick={() => setModo('red')}
+      >
+        Conectado a testnet
+      </button>
+      <button
+        className={modo === 'simulado' ? 'activo' : ''}
+        onClick={() => setModo('simulado')}
+      >
+        Recorrido simulado
+      </button>
+    </nav>
+  )
+}
+
+function Pie() {
+  return (
+    <footer className="pie">
+      Las reglas viven en el contrato <code>fusible</code> en Soroban. El
+      recorrido simulado existe para mostrar el flujo completo de creación sin
+      desplegar un fusible nuevo cada vez.
+    </footer>
   )
 }
