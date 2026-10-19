@@ -1,7 +1,6 @@
 import {
   BASE_FEE,
   Contract,
-  Keypair,
   TransactionBuilder,
   nativeToScVal,
   rpc,
@@ -12,18 +11,21 @@ import {
   AGENTE_ID,
   AGENTE_SECRET,
   CONTRACT_ID,
-  DUENO_ID,
   DUENO_SECRET,
   NETWORK_PASSPHRASE,
   RPC_URL,
   TOKEN_ID,
 } from './config'
+import { type Firmante, firmanteLocal } from './firmante'
 
 const server = new rpc.Server(RPC_URL)
 const contrato = () => new Contract(CONTRACT_ID)
 
-const dueno = () => Keypair.fromSecret(DUENO_SECRET)
-const agente = () => Keypair.fromSecret(AGENTE_SECRET)
+/** El agente siempre firma con su propia llave: es un programa, no una persona. */
+export const agente = () => firmanteLocal(AGENTE_SECRET, 'llave del agente')
+
+/** Dueño de demostración, para quien no tenga Freighter instalado. */
+export const duenoDemo = () => firmanteLocal(DUENO_SECRET, 'llave de demostración')
 
 /** Estado de un fusible tal como lo guarda el contrato. */
 export interface EstadoCadena {
@@ -80,8 +82,8 @@ const u64 = (n: bigint) => nativeToScVal(n, { type: 'u64' })
 const vecDir = (ds: string[]) =>
   xdr.ScVal.scvVec(ds.map((d) => dir(d)))
 
-async function construir(fuente: Keypair, op: xdr.Operation) {
-  const cuenta = await server.getAccount(fuente.publicKey())
+async function construir(fuente: string, op: xdr.Operation) {
+  const cuenta = await server.getAccount(fuente)
   return new TransactionBuilder(cuenta, {
     fee: BASE_FEE,
     networkPassphrase: NETWORK_PASSPHRASE,
@@ -93,7 +95,7 @@ async function construir(fuente: Keypair, op: xdr.Operation) {
 
 /** Lectura: simula, no firma, no cuesta nada. */
 async function leer<T>(metodo: string, ...args: xdr.ScVal[]): Promise<T> {
-  const tx = await construir(agente(), contrato().call(metodo, ...args))
+  const tx = await construir(AGENTE_ID, contrato().call(metodo, ...args))
   const sim = await server.simulateTransaction(tx)
   if (rpc.Api.isSimulationError(sim)) throw interpretar(sim.error)
   if (!sim.result?.retval) throw new ErrorContrato(null, 'El contrato no devolvió valor')
@@ -102,11 +104,11 @@ async function leer<T>(metodo: string, ...args: xdr.ScVal[]): Promise<T> {
 
 /** Escritura: simula, firma y espera a que el ledger cierre. */
 async function escribir<T>(
-  firmante: Keypair,
+  firmante: Firmante,
   metodo: string,
   ...args: xdr.ScVal[]
 ): Promise<{ hash: string; valor: T }> {
-  const tx = await construir(firmante, contrato().call(metodo, ...args))
+  const tx = await construir(firmante.direccion, contrato().call(metodo, ...args))
 
   let preparada
   try {
@@ -115,8 +117,10 @@ async function escribir<T>(
     throw interpretar(e instanceof Error ? e.message : String(e))
   }
 
-  preparada.sign(firmante)
-  const envio = await server.sendTransaction(preparada)
+  // La firma puede venir de Freighter o de una llave local; aquí da igual.
+  const firmadaXdr = await firmante.firmar(preparada.toXDR())
+  const firmada = TransactionBuilder.fromXDR(firmadaXdr, NETWORK_PASSPHRASE)
+  const envio = await server.sendTransaction(firmada)
   if (envio.status === 'ERROR') {
     throw interpretar(JSON.stringify(envio.errorResult ?? envio))
   }
@@ -148,12 +152,15 @@ export interface ReglasNuevas {
   vigenciaHasta: bigint
 }
 
-/** Crea un fusible nuevo en la red y devuelve su id. Lo firma el dueño. */
-export async function crearFusible(r: ReglasNuevas) {
+/**
+ * Crea un fusible nuevo y devuelve su id. El dueño del fusible es quien
+ * firma: si firma con Freighter, el fusible queda a nombre de esa billetera.
+ */
+export async function crearFusible(dueno: Firmante, r: ReglasNuevas) {
   return escribir<number>(
-    dueno(),
+    dueno,
     'create_fuse',
-    dir(DUENO_ID),
+    dir(dueno.direccion),
     dir(AGENTE_ID),
     dir(TOKEN_ID),
     i128(r.topeTotal),
@@ -163,12 +170,14 @@ export async function crearFusible(r: ReglasNuevas) {
   )
 }
 
-export const fondear = (id: number, monto: bigint) =>
-  escribir<bigint>(dueno(), 'fund', u32(id), i128(monto))
+export const fondear = (dueno: Firmante, id: number, monto: bigint) =>
+  escribir<bigint>(dueno, 'fund', u32(id), i128(monto))
 
-export const cortar = (id: number) => escribir<void>(dueno(), 'revoke', u32(id))
+export const cortar = (dueno: Firmante, id: number) =>
+  escribir<void>(dueno, 'revoke', u32(id))
 
-export const retirar = (id: number) => escribir<bigint>(dueno(), 'sweep', u32(id))
+export const retirar = (dueno: Firmante, id: number) =>
+  escribir<bigint>(dueno, 'sweep', u32(id))
 
 // ---- operaciones del agente ----
 

@@ -13,12 +13,19 @@ import {
   type EstadoCadena,
   cortar,
   crearFusible,
+  duenoDemo,
   fondear,
   leerEstado,
   leerTotal,
   pagar,
   retirar,
 } from '../stellar/contrato'
+import {
+  ErrorFreighter,
+  type Firmante,
+  conectarFreighter,
+  hayFreighter,
+} from '../stellar/firmante'
 import { corto, hora, money } from '../dominio'
 
 interface Linea {
@@ -40,6 +47,8 @@ const ETIQUETA_TIPO: Record<Linea['tipo'], string> = {
 }
 
 export default function PanelRed() {
+  const [firmante, setFirmante] = useState<Firmante>(() => duenoDemo())
+  const [freighterDisponible, setFreighterDisponible] = useState(false)
   const [idFusible, setIdFusible] = useState<number | null>(null)
   const [estado, setEstado] = useState<EstadoCadena | null>(null)
   const [cargando, setCargando] = useState(true)
@@ -60,6 +69,7 @@ export default function PanelRed() {
   useEffect(() => {
     void (async () => {
       try {
+        setFreighterDisponible(await hayFreighter())
         const total = await leerTotal()
         if (total > 0) await cargar(total)
       } catch (e) {
@@ -69,6 +79,15 @@ export default function PanelRed() {
       }
     })()
   }, [cargar])
+
+  const conectar = async () => {
+    try {
+      setFirmante(await conectarFreighter())
+      setFallo(null)
+    } catch (e) {
+      setFallo(e instanceof ErrorFreighter ? e.message : String(e))
+    }
+  }
 
   // ---- acciones ----
 
@@ -81,7 +100,7 @@ export default function PanelRed() {
     setPaso('Creando el fusible en la red…')
     try {
       const vig = BigInt(Math.floor(Date.now() / 1000) + horas * 3600)
-      const r = await crearFusible({
+      const r = await crearFusible(firmante, {
         topeTotal: aStroops(topeTotal),
         topePorOperacion: aStroops(topePorOp),
         destinos: DESTINOS.map((d) => d.direccion),
@@ -95,7 +114,7 @@ export default function PanelRed() {
       })
 
       setPaso('Depositando el presupuesto…')
-      const f = await fondear(r.valor, aStroops(deposito))
+      const f = await fondear(firmante, r.valor, aStroops(deposito))
       anotar({
         tipo: 'fondeado',
         texto: `Presupuesto depositado · ${money(deposito)} XLM`,
@@ -168,12 +187,19 @@ export default function PanelRed() {
 
   if (!estado || creando) {
     return (
-      <FormularioRed
-        onCrear={crear}
-        paso={paso}
-        fallo={fallo}
-        onCancelar={estado ? () => setCreando(false) : undefined}
-      />
+      <>
+        <BarraFirmante
+          firmante={firmante}
+          disponible={freighterDisponible}
+          onConectar={() => void conectar()}
+        />
+        <FormularioRed
+          onCrear={crear}
+          paso={paso}
+          fallo={fallo}
+          onCancelar={estado ? () => setCreando(false) : undefined}
+        />
+      </>
     )
   }
 
@@ -184,8 +210,16 @@ export default function PanelRed() {
   const usado = tope === 0 ? 0 : Math.min(100, (gastado / tope) * 100)
   const bloqueado = estado.cortado || paso !== null
 
+  const esMio = firmante.direccion === estado.owner
+
   return (
-    <main className="tablero">
+    <>
+      <BarraFirmante
+        firmante={firmante}
+        disponible={freighterDisponible}
+        onConectar={() => void conectar()}
+      />
+      <main className="tablero">
       <div className="columna">
         <section className="tarjeta">
           <div className="fila-titulo">
@@ -243,10 +277,10 @@ export default function PanelRed() {
           <div className="acciones">
             <button
               className="boton peligro"
-              disabled={bloqueado}
+              disabled={bloqueado || !esMio}
               onClick={() =>
                 void accionDueno(
-                  () => cortar(estado.id),
+                  () => cortar(firmante, estado.id),
                   'cortado',
                   () => 'Fusible cortado',
                   'Cortando el acceso del agente…',
@@ -257,10 +291,10 @@ export default function PanelRed() {
             </button>
             <button
               className="boton"
-              disabled={paso !== null || remanente <= 0}
+              disabled={paso !== null || remanente <= 0 || !esMio}
               onClick={() =>
                 void accionDueno(
-                  () => retirar(estado.id),
+                  () => retirar(firmante, estado.id),
                   'retiro',
                   (v) => `Remanente retirado · ${money(aUnidades(v as bigint))} XLM`,
                   'Devolviendo el remanente…',
@@ -278,6 +312,14 @@ export default function PanelRed() {
             </button>
           </div>
 
+          {!esMio && (
+            <p className="nota">
+              Este fusible es de <code>{corto(estado.owner)}</code>, no de la
+              billetera que estás usando. Puedes verlo y dejar que el agente
+              opere, pero solo su dueño puede cortarlo o retirar el remanente.
+              Crea uno tuyo para probar esas acciones.
+            </p>
+          )}
           {estado.cortado && (
             <p className="nota">
               El corte es definitivo: no existe ninguna función que lo reactive.
@@ -361,7 +403,38 @@ export default function PanelRed() {
           ))}
         </ol>
       </section>
-    </main>
+      </main>
+    </>
+  )
+}
+
+function BarraFirmante({
+  firmante,
+  disponible,
+  onConectar,
+}: {
+  firmante: Firmante
+  disponible: boolean
+  onConectar: () => void
+}) {
+  return (
+    <div className="firmante">
+      <span className="punto" aria-hidden="true" />
+      <span>
+        Firmando como <code>{corto(firmante.direccion)}</code> con{' '}
+        <strong>{firmante.etiqueta}</strong>
+      </span>
+      {!firmante.esFreighter &&
+        (disponible ? (
+          <button className="enlace" onClick={onConectar}>
+            Conectar mi billetera
+          </button>
+        ) : (
+          <a href="https://www.freighter.app" target="_blank" rel="noreferrer">
+            Instalar Freighter para usar la tuya ↗
+          </a>
+        ))}
+    </div>
   )
 }
 

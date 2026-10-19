@@ -42,7 +42,16 @@ quién, para poder listarlos.
 Seis días, con dedicación parcial. Ordenado por lo que más cambia la
 demostración.
 
-### 1. Que el dueño firme con su propia billetera
+### 1. Que el dueño firme con su propia billetera · **hecho el 19 de octubre**
+
+> La capa de firma quedó abstraída: el mismo código funciona con Freighter o
+> con la llave de demostración. **La firma real con Freighter no se ha
+> probado todavía** — el navegador de desarrollo no tiene la extensión
+> instalada. Lo verificado es la detección de su ausencia, que la interfaz
+> ofrezca instalarla, y que las operaciones siguen funcionando con la llave
+> local. Falta una prueba en un navegador con Freighter en Test Net.
+
+#### Lo que decía el plan
 
 **Qué:** reemplazar la llave embebida del dueño por Freighter. El usuario
 conecta su billetera, crea su fusible y lo firma él.
