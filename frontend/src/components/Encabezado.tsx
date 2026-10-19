@@ -4,9 +4,11 @@ import { corto } from '../dominio'
 export default function Encabezado({
   firmante,
   onSalir,
+  onTour,
 }: {
   firmante: Firmante | null
   onSalir: () => void
+  onTour: () => void
 }) {
   return (
     <header className="encabezado">
@@ -30,6 +32,9 @@ export default function Encabezado({
         <span className="red">testnet</span>
         {firmante && (
           <>
+            <button className="ayuda-tour" onClick={onTour}>
+              ¿Cómo funciona?
+            </button>
             <span className="quien">
               <span className="punto" aria-hidden="true" />
               <code>{corto(firmante.direccion)}</code>

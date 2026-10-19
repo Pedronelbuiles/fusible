@@ -25,7 +25,6 @@ import { corto, money } from '../dominio'
 import { ModalError, ModalProceso, type PasoProceso } from './Modal'
 import AgenteAutonomo from './AgenteAutonomo'
 import Registro, { type Rechazo } from './Registro'
-import Tour, { PASOS_TOUR, yaVioElTour } from './Tour'
 
 interface Proceso {
   titulo: string
@@ -48,7 +47,6 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
   const [eventos, setEventos] = useState<EventoCadena[]>([])
   const [cargandoEventos, setCargandoEventos] = useState(false)
   const [rechazos, setRechazos] = useState<Rechazo[]>([])
-  const [tour, setTour] = useState(false)
 
   const anotarRechazo = (r: Omit<Rechazo, 'id' | 'momento'>) =>
     setRechazos((p) => [{ ...r, id: Date.now() + Math.random(), momento: Date.now() }, ...p])
@@ -97,7 +95,6 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
         setEstado(null)
       }
       setCargando(false)
-      if (!yaVioElTour()) setTour(true)
     })()
   }, [firmante, cargar, misIds])
 
@@ -182,7 +179,6 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
 
   const modales = (
     <>
-      {tour && <Tour pasos={PASOS_TOUR} onCerrar={() => setTour(false)} />}
       {proceso && <ModalProceso titulo={proceso.titulo} pasos={proceso.pasos} />}
       {fallo && (
         <ModalError
@@ -246,7 +242,6 @@ export default function PanelRed({ firmante }: { firmante: Firmante }) {
         bloqueado={ocupado}
         onElegir={(n) => void cargar(n)}
         onNuevo={() => setCreando(true)}
-        onTour={() => setTour(true)}
       />
 
       <main className="tablero">
@@ -417,14 +412,12 @@ function Selector({
   bloqueado,
   onElegir,
   onNuevo,
-  onTour,
 }: {
   mios: number[]
   actual: number | null
   bloqueado: boolean
   onElegir: (n: number) => void
   onNuevo: () => void
-  onTour?: () => void
 }) {
   return (
     <nav className="mis-fusibles" data-tour="selector">
@@ -442,11 +435,6 @@ function Selector({
       <button className="nuevo" disabled={bloqueado} onClick={onNuevo}>
         + nuevo
       </button>
-      {onTour && (
-        <button className="ayuda-tour" onClick={onTour} title="Ver el recorrido">
-          ¿Cómo funciona?
-        </button>
-      )}
     </nav>
   )
 }

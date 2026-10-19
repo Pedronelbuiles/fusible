@@ -46,8 +46,38 @@ export default function Tour({
 }) {
   const [i, setI] = useState(0)
   const [hueco, setHueco] = useState<Hueco | null>(null)
+  const [visibles, setVisibles] = useState<PasoTour[]>([])
 
-  const visibles = pasos.filter((p) => document.querySelector(`[data-tour="${p.ancla}"]`))
+  /**
+   * Qué pasos tienen su elemento en pantalla.
+   *
+   * Esto NO se puede calcular durante el render: cuando el tour se monta a
+   * la vez que la pantalla que va a explicar, el DOM todavía no tiene esos
+   * elementos y la lista saldría vacía — el tour no aparecía hasta que algo
+   * más provocaba un repintado. Se mide después del commit, y se reintenta
+   * un segundo por si la pantalla tarda en montarse.
+   */
+  useEffect(() => {
+    let vivo = true
+    let intentos = 0
+
+    const buscar = () => {
+      if (!vivo) return
+      const v = pasos.filter((p) => document.querySelector(`[data-tour="${p.ancla}"]`))
+      if (v.length > 0) {
+        setVisibles(v)
+        return
+      }
+      // El panel puede tardar en montarse: lee el contrato primero.
+      if (++intentos < 100) setTimeout(buscar, 150)
+    }
+
+    buscar()
+    return () => {
+      vivo = false
+    }
+  }, [pasos])
+
   const paso = visibles[i]
 
   const cerrar = useCallback(() => {
@@ -83,7 +113,12 @@ export default function Tour({
     return () => window.removeEventListener('keydown', h)
   }, [cerrar, visibles.length])
 
-  if (!paso || visibles.length === 0) return null
+  // Aún midiendo, o esta pantalla no tiene nada que explicar.
+  if (visibles.length === 0) return null
+  if (!paso) {
+    setI(0)
+    return null
+  }
 
   const ultimo = i === visibles.length - 1
   // El globo va debajo del hueco salvo que no quepa; entonces, encima.
