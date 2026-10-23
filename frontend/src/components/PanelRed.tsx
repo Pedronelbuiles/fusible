@@ -13,14 +13,15 @@ import {
   type EventoCadena,
   cortar,
   crearFusible,
+  leerMisFusibles,
   fondear,
-  leerDeDueno,
   leerEstado,
   leerEventos,
   pagar,
   retirar,
 } from '../stellar/contrato'
 import type { Firmante } from '../stellar/firmante'
+import type { FusibleBreve } from '../stellar/contrato'
 import { corto, money } from '../dominio'
 import { ModalError, ModalProceso, type PasoProceso } from './Modal'
 import AgenteAutonomo from './AgenteAutonomo'
@@ -45,7 +46,7 @@ export default function PanelRed({
   onPantalla: (nombre: 'formulario' | 'panel') => void
 }) {
   const [idFusible, setIdFusible] = useState<number | null>(null)
-  const [mios, setMios] = useState<number[]>([])
+  const [mios, setMios] = useState<FusibleBreve[]>([])
   const [errorLista, setErrorLista] = useState<string | null>(null)
   const [estado, setEstado] = useState<EstadoCadena | null>(null)
   const [cargando, setCargando] = useState(true)
@@ -88,11 +89,11 @@ export default function PanelRed({
    * contrato configurado sea una versión anterior sin `de_dueno`. Un fallo
    * silencioso aquí cuesta horas de diagnóstico.
    */
-  const misIds = useCallback(async (direccion: string) => {
+  const misFusibles = useCallback(async (direccion: string) => {
     try {
-      const ids = await leerDeDueno(direccion)
+      const lista = await leerMisFusibles(direccion)
       setErrorLista(null)
-      return ids
+      return lista
     } catch (e) {
       setErrorLista((e as Error).message)
       return []
@@ -102,11 +103,11 @@ export default function PanelRed({
   useEffect(() => {
     void (async () => {
       setCargando(true)
-      const lista = await misIds(firmante.direccion)
+      const lista = await misFusibles(firmante.direccion)
       setMios(lista)
       if (lista.length > 0) {
         try {
-          await cargar(lista[lista.length - 1])
+          await cargar(lista[lista.length - 1].id)
         } catch (e) {
           setFallo({ titulo: 'No se pudo leer el contrato', mensaje: String(e) })
         }
@@ -115,11 +116,16 @@ export default function PanelRed({
       }
       setCargando(false)
     })()
-  }, [firmante, cargar, misIds])
+  }, [firmante, cargar, misFusibles])
 
   // ---- acciones ----
 
-  const crear = async (topeTotal: number, topePorOp: number, horas: number) => {
+  const crear = async (
+    nombre: string,
+    topeTotal: number,
+    topePorOp: number,
+    horas: number,
+  ) => {
     const pasos: PasoProceso[] = [
       { texto: 'Crear el fusible con sus reglas', estado: 'activo' },
       { texto: 'Depositar el presupuesto', estado: 'pendiente' },
@@ -130,6 +136,7 @@ export default function PanelRed({
     try {
       const vig = BigInt(Math.floor(Date.now() / 1000) + horas * 3600)
       const r = await crearFusible(firmante, {
+        nombre,
         topeTotal: aStroops(topeTotal),
         topePorOperacion: aStroops(topePorOp),
         destinos: DESTINOS.map((d) => d.direccion),
@@ -141,7 +148,7 @@ export default function PanelRed({
 
       await fondear(firmante, r.valor, aStroops(topeTotal))
 
-      setMios(await misIds(firmante.direccion))
+      setMios(await misFusibles(firmante.direccion))
       await cargar(r.valor)
       setCreando(false)
     } catch (e) {
@@ -276,7 +283,10 @@ export default function PanelRed({
         <div className="columna">
           <section className="tarjeta">
             <div className="fila-titulo">
-              <h2>Fusible #{estado.id}</h2>
+              <h2>
+                {estado.nombre}
+                <span className="numero">#{estado.id}</span>
+              </h2>
               <span className={`estado ${estado.cortado ? 'cortado' : 'activo'}`}>
                 {estado.cortado ? 'Cortado' : 'Activo'}
               </span>
@@ -428,6 +438,7 @@ export default function PanelRed({
 
         <Registro
           idFusible={estado.id}
+          nombre={estado.nombre}
           eventos={eventos}
           rechazos={rechazos}
           cargando={cargandoEventos}
@@ -447,7 +458,7 @@ function Selector({
   onElegir,
   onNuevo,
 }: {
-  mios: number[]
+  mios: FusibleBreve[]
   actual: number | null
   error: string | null
   bloqueado: boolean
@@ -463,14 +474,17 @@ function Selector({
           versión anterior
         </span>
       )}
-      {mios.map((n) => (
+      {mios.map((f) => (
         <button
-          key={n}
-          className={n === actual ? 'activo' : ''}
+          key={f.id}
+          className={f.id === actual ? 'activo' : ''}
           disabled={bloqueado}
-          onClick={() => onElegir(n)}
+          onClick={() => onElegir(f.id)}
+          // El title es el nombre accesible del boton: si lleva solo el
+          // numero, un lector de pantalla pierde el nombre que se ve.
+          title={`${f.nombre} — fusible #${f.id}`}
         >
-          #{n}
+          {f.nombre}
         </button>
       ))}
       <button className="nuevo" disabled={bloqueado} onClick={onNuevo}>
@@ -486,18 +500,22 @@ function Formulario({
   onCancelar,
   primero,
 }: {
-  onCrear: (t: number, p: number, h: number) => Promise<void>
+  onCrear: (nombre: string, t: number, p: number, h: number) => Promise<void>
   ocupado: boolean
   onCancelar?: () => void
   primero: boolean
 }) {
+  const [nombre, setNombre] = useState('')
   const [topeTotal, setTopeTotal] = useState('10')
   const [topePorOp, setTopePorOp] = useState('2')
   const [horas, setHoras] = useState('720')
 
   const t = Number(topeTotal)
   const p = Number(topePorOp)
-  const valido = t > 0 && p > 0 && p <= t && Number(horas) > 0
+  // El límite de 32 es el del contrato: más largo lo rechaza la red.
+  const nom = nombre.trim()
+  const valido =
+    nom.length > 0 && nom.length <= 32 && t > 0 && p > 0 && p <= t && Number(horas) > 0
 
   return (
     <section className="tarjeta" data-tour="formulario">
@@ -508,6 +526,19 @@ function Formulario({
         dos transacciones reales. Una vez creado, estas reglas no las puede
         cambiar nadie, tampoco tú.
       </p>
+
+      <label className="nombre-fusible">
+        Nombre
+        <input
+          type="text"
+          maxLength={32}
+          placeholder="Agente de investigación"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          disabled={ocupado}
+        />
+        <small>Para reconocerlo entre tus fusibles. Queda en el contrato</small>
+      </label>
 
       <div className="campos">
         <label>
@@ -573,7 +604,7 @@ function Formulario({
       <button
         className="boton primario"
         disabled={!valido || ocupado}
-        onClick={() => void onCrear(t, p, Number(horas))}
+        onClick={() => void onCrear(nom, t, p, Number(horas))}
       >
         Crear el fusible y depositar {topeTotal} XLM
       </button>

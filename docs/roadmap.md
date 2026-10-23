@@ -73,8 +73,9 @@ lo que vas a usar al grabar el video.
 > ellos. Verificado contra la red: dos fusibles creados, cada uno con sus
 > propias reglas, y el selector alterna bien entre ambos.
 >
-> **Contrato nuevo:** `CD2ZSG35QKJGNN4EERA55DW62JEWFB567TJYW7IKL5HD377WPRWX3SI6`
-> — el anterior sigue desplegado y el entregable 4 apunta a él.
+> **Contrato de ese día:** `CD2ZSG35QKJGNN4EERA55DW62JEWFB567TJYW7IKL5HD377WPRWX3SI6`.
+> Quedó obsoleto: hubo dos redespliegues después. El vigente es
+> `CD5ES3IRDQUVSFS5IYAFHK7FWGGE3DUBN4HKCTE7PR5KNMLPQKM77ZC7`, con nombres de fusible.
 
 #### Lo que decía el plan
 

@@ -28,11 +28,13 @@ const ETIQUETA: Record<EventoCadena['tipo'], string> = {
  */
 export default function Registro({
   idFusible,
+  nombre,
   eventos,
   rechazos,
   cargando,
 }: {
   idFusible: number
+  nombre: string
   eventos: EventoCadena[]
   rechazos: Rechazo[]
   cargando: boolean
@@ -65,7 +67,7 @@ export default function Registro({
   return (
     <section className="tarjeta historial" data-tour="registro">
       <div className="fila-titulo">
-        <h2>Registro del fusible #{idFusible}</h2>
+        <h2>Registro de {nombre}</h2>
         {cargando && <span className="resumen">leyendo la red…</span>}
       </div>
       <p className="ayuda">

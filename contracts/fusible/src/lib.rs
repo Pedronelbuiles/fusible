@@ -11,7 +11,8 @@
 //! distinto de lo que la red va a hacer.
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, Vec,
+    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, String,
+    Vec,
 };
 
 /// ~5 s por ledger. Se usa para decidir cuánto extender la vida de los datos.
@@ -20,6 +21,8 @@ const LEDGERS_POR_DIA: u32 = 17_280;
 const TTL_UMBRAL: u32 = LEDGERS_POR_DIA * 30;
 /// Cada extensión lo lleva a 90 días.
 const TTL_EXTENSION: u32 = LEDGERS_POR_DIA * 90;
+/// Largo máximo del nombre, en bytes. Acota lo que se paga por guardarlo.
+const NOMBRE_MAX: u32 = 32;
 
 #[contracttype]
 pub enum DataKey {
@@ -35,6 +38,9 @@ pub enum DataKey {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Fusible {
     pub id: u32,
+    /// Cómo lo llamó su dueño. Para distinguirlos; no interviene en ninguna
+    /// regla. Se fija al crear y no cambia, como todo lo demás.
+    pub nombre: String,
     pub owner: Address,
     pub agent: Address,
     pub token: Address,
@@ -110,6 +116,7 @@ impl FusibleContract {
     pub fn create_fuse(
         env: Env,
         owner: Address,
+        nombre: String,
         agent: Address,
         token: Address,
         tope_total: i128,
@@ -124,6 +131,8 @@ impl FusibleContract {
             || tope_por_op > tope_total
             || destinos.is_empty()
             || vigencia_hasta <= env.ledger().timestamp()
+            || nombre.is_empty()
+            || nombre.len() > NOMBRE_MAX
         {
             return Err(Error::ParametrosInvalidos);
         }
@@ -141,6 +150,7 @@ impl FusibleContract {
 
         let f = Fusible {
             id,
+            nombre,
             owner: owner.clone(),
             agent: agent.clone(),
             token,

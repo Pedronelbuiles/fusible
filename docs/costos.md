@@ -1,36 +1,45 @@
 # Cuánto cuesta operar un fusible
 
-**Medición:** 19 de octubre de 2026 · Stellar testnet
-**Contrato:** `CD2ZSG35QKJGNN4EERA55DW62JEWFB567TJYW7IKL5HD377WPRWX3SI6`
+**Medición:** 23 de octubre de 2026 · Stellar testnet
+**Contrato:** `CD5ES3IRDQUVSFS5IYAFHK7FWGGE3DUBN4HKCTE7PR5KNMLPQKM77ZC7`
 **Reproducible con:** `npm run medir` desde `frontend/`
 
-Esta medición existe porque veníamos afirmando que Stellar hacía barato el
-micropago **sin haberlo comprobado**. Ya está comprobado, y el resultado
-contradice lo que decíamos.
+> **Esta versión corrige un error grave de la medición del 19 de octubre**,
+> que daba el pago por 94 veces más caro de lo que es y nos llevó a concluir
+> que perdíamos el argumento de costo. No lo perdemos. Al final está qué
+> estaba mal y por qué.
 
 ---
 
-## Lo que la red cobró de verdad
+## Lo que la red cobra de verdad
 
-De las transacciones ejecutadas por la cuenta del dueño, leídas de Horizon.
-No son estimaciones: es `fee_charged`.
+`fee_charged` leído de Horizon sobre las operaciones ya ejecutadas. No son
+estimaciones, y se agrupan por función del contrato.
 
-| Operación | Stroops cobrados | XLM |
-|---|---:|---:|
-| `pay` — un pago del agente | 791.591 | 0,0791591 |
-| `create_fuse` — crear un fusible | ~6.600.000 | ~0,66 |
-| `fund` — depositar | 8.658 | 0,0008658 |
-| `revoke` — cortar | 3.758 | 0,0003758 |
-| Desplegar el contrato (una vez) | 148.923.854 | 14,89 |
+| Función | La firma | Veces medida | Stroops | XLM |
+|---|---|---:|---:|---:|
+| `revoke` — cortar | dueño | 1 | 3.758 | 0,0003758 |
+| `sweep` — retirar | dueño | 1 | 8.220 | 0,0008220 |
+| **`pay` — un pago del agente** | **agente** | **24** | **8.406** | **0,0008406** |
+| `fund` — depositar | dueño | 11 | 8.651 | 0,0008651 |
+| `create_fuse` — crear | dueño | 12 | 6.491.353 | 0,6491353 |
+| Desplegar el contrato (una vez) | dueño | — | 148.923.854 | 14,89 |
 
 Las lecturas (`estado`, `de_dueno`) **no cuestan nada**: se resuelven
 simulando, sin enviar transacción.
 
 ## El número que importa
 
-**Un pago del agente cuesta 0,0792 XLM.**
+**Un pago del agente cuesta 0,00084 XLM.** Es la operación que se repite;
+todo lo demás ocurre una vez por fusible.
 
-Es la operación que se repite. Todo lo demás ocurre una vez por fusible.
+Medido 24 veces, en dos días distintos, con un rango de 8.406 a 8.696
+stroops. Es estable.
+
+**Crear un fusible cuesta 0,65 XLM**, y eso sí es caro: 772 pagos. Es el
+precio de abrir entradas nuevas de almacenamiento persistente y pagar su
+renta por adelantado. Se amortiza con el uso, pero encarece al usuario que
+crea muchos fusibles pequeños.
 
 ---
 
@@ -38,99 +47,119 @@ Es la operación que se repite. Todo lo demás ocurre una vez por fusible.
 
 | | Fusible | AgentCore + Coinbase CDP |
 |---|---|---|
-| Costo por pago | 0,0792 XLM | USD 0,005 por operación de wallet |
-| Nivel gratuito | Ninguno | **5.000 operaciones al mes** |
+| Por pago | 0,00084 XLM | USD 0,005 por operación de wallet |
+| Crear el presupuesto | 0,65 XLM, una vez | Sin costo aparte |
+| Nivel gratuito | Ninguno | 5.000 operaciones al mes |
 
-Con XLM a **USD 0,178** ([OKX](https://www.okx.com/en-us/price/stellar-xlm) y
-[Bybit](https://www.bybit.com/en/price/stellar/), 19 de octubre de 2026):
+El precio del XLM al 23 de octubre de 2026 **no lo pude fijar**: las fuentes
+consultadas van de USD 0,09 a USD 0,22 y ninguna trae fecha fiable. Así que
+el rango completo:
 
-> **Un pago en Fusible cuesta unos USD 0,0141. En AgentCore cuesta USD 0,005,
-> y los primeros 5.000 del mes son gratis.**
+| XLM a… | Un pago cuesta | Frente a los USD 0,005 de AgentCore |
+|---|---|---|
+| USD 0,09 | USD 0,000076 | 66 veces más barato |
+| USD 0,18 | USD 0,000151 | 33 veces más barato |
+| USD 0,22 | USD 0,000185 | 27 veces más barato |
 
-**Fusible es entre 2,8 veces más caro y, por debajo de 5.000 operaciones
-mensuales, infinitamente más caro, porque el competidor no cobra nada.**
+**La conclusión no depende del precio: en todo el rango somos entre 27 y 66
+veces más baratos por pago.** Haría falta que el XLM se multiplicara por 27
+para empatar.
 
-### El precio de indiferencia
+### Dónde está el cruce de verdad
 
-Para que un pago en Fusible costara lo mismo que uno en AgentCore, XLM
-tendría que valer **USD 0,063**. Hoy está en 0,178, casi tres veces por
-encima. El precio tendría que caer a un tercio para empatar — y aun así
-seguirían ganando por el nivel gratuito.
+El nivel gratuito de AgentCore es real y hay que contarlo. Con XLM a USD
+0,18, y sumando el costo de crear el fusible:
+
+| Pagos al mes | Fusible | AgentCore | Gana |
+|---:|---:|---:|---|
+| 1.000 | USD 0,27 | USD 0 | AgentCore |
+| 5.000 | USD 0,87 | USD 0 | AgentCore |
+| 10.000 | USD 1,63 | USD 25 | **Fusible, 15×** |
+| 100.000 | USD 15,2 | USD 475 | **Fusible, 31×** |
+
+**Por debajo de unos 5.200 pagos mensuales, AgentCore sale gratis y nosotros
+no. Por encima, la diferencia se abre rápido.**
 
 ---
 
 ## Qué significa
 
-**El argumento de costo frente a AgentCore no existe. Es al revés.**
+El argumento de costo **existe y nos favorece**, a partir de cierto volumen.
+Pero sigue sin ser el argumento principal, por dos razones:
 
-Lo que queda en pie de la diferenciación es lo otro: que el límite y el
-registro no los administra ninguna de las partes. Ese sigue siendo
-arquitectónico y no se cierra bajando un precio. Pero hay que dejar de decir
-que esto es más barato, porque no lo es.
+1. Por debajo de 5.000 operaciones al mes el competidor es gratis, y ahí
+   vive el usuario que está probando.
+2. Un precio se baja. Que el límite y el registro no los administre ninguna
+   de las partes es arquitectónico, y eso no se iguala cambiando una tarifa.
 
-## El intento de optimización que falló
+**El orden correcto es: primero el control independiente, y el costo como
+refuerzo cuando el volumen crece.**
 
-**Hipótesis:** `pay` reescribía el fusible entero, incluida la lista de
-destinos; separar lo inmutable de lo mutable debería abaratarlo.
+---
 
-**Se implementó y se midió. No sirvió.**
+## Qué estaba mal en la medición del 19 de octubre
 
-| | Antes | Después |
+Dos errores que se reforzaron entre sí.
+
+### 1. Se midió la cuenta equivocada
+
+El script leía las transacciones del **dueño**. Pero `pay` **lo firma el
+agente**, con su propia cuenta. En esa tabla no había ni un solo pago, y se
+tomó el cobro de otra operación —una de las caras, del orden de 0,079 XLM—
+como si fuera el del pago.
+
+Ya está corregido: el script lee las dos cuentas y **decodifica qué función
+fue cada cobro**, así que la tabla ya no se puede leer mal.
+
+### 2. Se comparó la simulación con el cobro real
+
+Las cifras de 931.129 y 1.803.611 stroops que manejábamos para `pay` salen
+de `simulateTransaction`. **La simulación reserva presupuesto para extender
+el TTL de los datos; la red solo lo cobra cuando toca extenderlo de verdad.**
+Como el TTL se extiende a 90 días y se renueva mucho antes de agotarse, casi
+nunca toca. De ahí el factor de ~215 entre lo estimado y lo cobrado.
+
+### Lo que esto disuelve
+
+**La paradoja del "69×" no existía.** Decíamos que `pay` costaba 69 veces
+más que `fund` escribiendo los mismos bytes, y sospechábamos de la
+transferencia saliente del SAC. En cobro real:
+
+| | Simulación | Cobro real |
 |---|---:|---:|
-| `pay` | 932.854 | 931.229 |
-| `create_fuse` | 7.094.935 | 8.383.428 |
+| `pay` | 1.803.611 | 8.406 |
+| `fund` | 13.498 | 8.651 |
 
-0,17% de mejora en el pago, y un 18% **más caro** al crear, porque ahora se
-escriben dos entradas en vez de una. El experimento se revirtió.
+**Cuestan prácticamente lo mismo, y `pay` es incluso algo más barato.** No
+hay nada que investigar en la transferencia del SAC: la diferencia era un
+artefacto de comparar una estimación con un cobro.
 
-**Por qué la hipótesis era falsa.** El desglose de recursos de la simulación
-lo deja claro:
+**La "optimización que falló" también se explica.** Separar las reglas del
+saldo no mejoró nada porque estaba optimizando contra un número que no era
+el costo. Haber revertido aquel cambio fue lo correcto, pero por una razón
+distinta de la que anotamos.
 
-| Operación | Fee | Instrucciones | Bytes escritos | Entradas RW |
-|---|---:|---:|---:|---:|
-| `pay` | 931.129 | 1.512.556 | 644 | 4 |
-| `fund` | 13.490 | 978.880 | 568 | 3 |
-| `revoke` | 8.517 | 757.150 | 200 | 1 |
+### Lo que el nombre del fusible añadió
 
-`pay` escribe 644 bytes y `fund` 568 — prácticamente lo mismo — pero `pay`
-cuesta **69 veces más**. El costo no está en los bytes que escribimos
-nosotros.
+Se midió aparte, comparando el contrato con nombre contra el anterior sin
+nombre, el mismo día y con los mismos parámetros:
 
-**Qué no sé.** No identifiqué qué lo encarece. La pista es que `pay` toca una
-entrada de lectura-escritura más que `fund`, y la diferencia entre ambas es
-el sentido de la transferencia: `fund` mueve del dueño al contrato, `pay`
-mueve del contrato a una cuenta externa. Sospecho que el costo está en esa
-transferencia saliente del SAC, no en nuestro contrato, pero **es una
-sospecha sin comprobar**.
+| | Sin nombre | Con nombre | Diferencia |
+|---|---:|---:|---:|
+| `pay` (simulado) | 1.803.686 | 1.803.711 | **+25 stroops** |
 
-Comprobarlo requiere aislar la transferencia: medir un `pay` que valide las
-reglas pero no transfiera, y comparar. Queda pendiente.
+Despreciable: 0,0000025 XLM.
 
-## Qué se puede hacer todavía
+---
 
-Descartada la hipótesis de los bytes escritos, quedan dos vías, ninguna
-medida:
+## Matices que siguen sin medir
 
-1. **Aislar el costo de la transferencia.** Si viene del SAC y no de nuestro
-   contrato, no hay nada que optimizar de nuestro lado: es el precio de
-   mover un activo en Stellar, y afecta por igual a cualquier producto que
-   mueva dinero en esta red.
-2. **Acumular pagos.** Si el costo está en la transferencia, hacer una por
-   cada petición del agente es lo más caro posible. Un modelo de canal
-   —acumular muchas peticiones y liquidar una vez— lo esquiva. Es
-   exactamente lo que hace **MPP Session**, el tercer camino de la
-   documentación de pagos agénticos de Stellar, que descartamos por
-   complejidad al diseñar.
-
-La segunda es la que puede cambiar el resultado de verdad, y cambia la
-arquitectura, no un detalle.
-
-## Matices que no medí
-
-- Parte del resource fee corresponde a **renta de almacenamiento**, y la
-  documentación de Stellar la describe como reembolsable. No comprobé cuánto
-  vuelve, así que los números de arriba son el cobro bruto.
+- Parte del fee es **renta de almacenamiento**, que la documentación de
+  Stellar describe como reembolsable. No comprobé cuánto vuelve.
 - Son fees de **testnet**. El mínimo de red es el mismo en mainnet, pero la
   congestión puede subir la parte de inclusión.
-- El despliegue de 148.923.854 stroops es subir el `.wasm`, y ocurre una
-  sola vez por versión del contrato.
+- `create_fuse` muestra una dispersión grande entre ejecuciones (de 6,5
+  millones a 2.144 millones de stroops). **No investigué a qué se debe**;
+  la sospecha es que el máximo corresponde a una ejecución que sí tuvo que
+  pagar extensión de TTL, pero no está comprobado.
+- El precio del XLM en USD no está fijado para hoy; arriba va el rango.

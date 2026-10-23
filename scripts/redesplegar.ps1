@@ -84,7 +84,7 @@ $venc = [int][double]::Parse((Get-Date -UFormat %s)) + 2592000   # 30 días
 $destinosJson = Join-Path $env:TEMP "fusible-destinos.json"
 Set-Content -Path $destinosJson -Value (ConvertTo-Json @($d1, $d2) -Compress) -Encoding ascii
 
-$r1 = & $cli contract invoke --id $contrato --source fusible-dueno --network testnet -- create_fuse --owner $own --agent $agt --token $tok --tope_total 1000000000 --tope_por_op 150000000 --destinos-file-path $destinosJson --vigencia_hasta $venc 2>&1
+$r1 = & $cli contract invoke --id $contrato --source fusible-dueno --network testnet -- create_fuse --owner $own --nombre "Agente de demostracion" --agent $agt --token $tok --tope_total 1000000000 --tope_por_op 150000000 --destinos-file-path $destinosJson --vigencia_hasta $venc 2>&1
 if ($LASTEXITCODE -ne 0) { $r1 | ForEach-Object { Write-Host "    $_" -ForegroundColor Red }; throw "Falló create_fuse" }
 
 $r2 = & $cli contract invoke --id $contrato --source fusible-dueno --network testnet -- fund --id 1 --amount 500000000 2>&1

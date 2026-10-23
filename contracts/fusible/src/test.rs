@@ -2,7 +2,7 @@
 
 use super::*;
 use soroban_sdk::testutils::{Address as _, Ledger};
-use soroban_sdk::{vec, Address, Env};
+use soroban_sdk::{vec, Address, Env, String};
 
 /// Monta un fusible de 1000 con tope de 150 por operación y dos destinos
 /// permitidos, ya fondeado.
@@ -34,6 +34,7 @@ fn montar() -> Caso<'static> {
 
     let id = cliente.create_fuse(
         &owner,
+        &String::from_str(&env, "Agente de prueba"),
         &agent,
         &token_id,
         &1_000,
@@ -157,6 +158,7 @@ fn un_fusible_no_puede_gastar_del_otro() {
     let agent2 = Address::generate(&c.env);
     let id2 = c.cliente.create_fuse(
         &c.owner,
+        &String::from_str(&c.env, "Segundo fusible"),
         &agent2,
         &c.cliente.estado(&c.id).token,
         &500,
@@ -193,6 +195,7 @@ fn cada_dueno_ve_solo_sus_fusibles() {
     // El primer dueño crea un segundo fusible.
     let id2 = c.cliente.create_fuse(
         &c.owner,
+        &String::from_str(&c.env, "El mio"),
         &Address::generate(&c.env),
         &token,
         &300,
@@ -204,6 +207,7 @@ fn cada_dueno_ve_solo_sus_fusibles() {
     // Otra persona crea el suyo.
     let ajeno = c.cliente.create_fuse(
         &otro,
+        &String::from_str(&c.env, "El de otro"),
         &Address::generate(&c.env),
         &token,
         &700,
@@ -225,4 +229,33 @@ fn una_direccion_sin_fusibles_devuelve_lista_vacia() {
     let c = montar();
     let nadie = Address::generate(&c.env);
     assert_eq!(c.cliente.de_dueno(&nadie).len(), 0);
+}
+
+#[test]
+fn el_nombre_se_guarda_y_se_valida() {
+    let c = montar();
+    let token = c.cliente.estado(&c.id).token;
+
+    assert_eq!(
+        c.cliente.estado(&c.id).nombre,
+        String::from_str(&c.env, "Agente de prueba")
+    );
+
+    // Vacio y demasiado largo se rechazan igual que cualquier otro
+    // parametro invalido: el nombre es lo unico que distingue un fusible de
+    // otro en la interfaz, y uno sin nombre no se puede elegir.
+    let largo = "x".repeat((NOMBRE_MAX + 1) as usize);
+    for malo in ["", largo.as_str()] {
+        let r = c.cliente.try_create_fuse(
+            &c.owner,
+            &String::from_str(&c.env, malo),
+            &Address::generate(&c.env),
+            &token,
+            &100,
+            &50,
+            &vec![&c.env, c.permitido.clone()],
+            &(c.env.ledger().timestamp() + 86_400),
+        );
+        assert_eq!(r, Err(Ok(Error::ParametrosInvalidos)));
+    }
 }

@@ -457,6 +457,45 @@ code {
 
 .mis-fusibles button.nuevo { border-style: dashed; }
 
+/* Los nombres los escribe el usuario: hay que acotar hasta donde crecen. */
+.mis-fusibles button:not(.nuevo) {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* El numero sigue ahi, en pequeno, porque es lo que casa con el explorador. */
+.fila-titulo h2 .numero {
+  margin-left: 9px;
+  font-size: 0.72em;
+  font-weight: 500;
+  color: var(--suave);
+}
+
+.nombre-fusible {
+  display: block;
+  margin-bottom: 15px;
+  font-size: 0.84rem;
+  color: var(--suave);
+}
+
+.nombre-fusible input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  box-sizing: border-box;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 9px 11px;
+  color: var(--texto);
+  font: inherit;
+}
+
+.nombre-fusible input:focus { outline: none; border-color: var(--ambar); }
+.nombre-fusible small { display: block; margin-top: 5px; opacity: 0.75; }
+
 /* ---------- modales ---------- */
 
 .velo {

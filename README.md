@@ -64,4 +64,4 @@ instalar Visual Studio Build Tools.
 ---
 
 Documentación del proyecto en [`docs/`](docs/). El contrato desplegado:
-[CDY34ZUL…6OPUNA733](https://stellar.expert/explorer/testnet/contract/CDY34ZULKDNOVCAGKXTCU7HE6SCAUOSQ4B5T7V4RMP7FYYU6OPUNA733).
+[CD5ES3IR…PQKM77ZC7](https://stellar.expert/explorer/testnet/contract/CD5ES3IRDQUVSFS5IYAFHK7FWGGE3DUBN4HKCTE7PR5KNMLPQKM77ZC7).

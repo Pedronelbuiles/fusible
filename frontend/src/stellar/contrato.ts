@@ -30,6 +30,7 @@ export const duenoDemo = () => firmanteLocal(DUENO_SECRET, 'llave de demostraci�
 /** Estado de un fusible tal como lo guarda el contrato. */
 export interface EstadoCadena {
   id: number
+  nombre: string
   owner: string
   agent: string
   token: string
@@ -78,6 +79,7 @@ function interpretar(crudo: string): ErrorContrato {
 const dir = (d: string) => nativeToScVal(d, { type: 'address' })
 const i128 = (n: bigint) => nativeToScVal(n, { type: 'i128' })
 const u32 = (n: number) => nativeToScVal(n, { type: 'u32' })
+const str = (s: string) => nativeToScVal(s, { type: 'string' })
 const u64 = (n: bigint) => nativeToScVal(n, { type: 'u64' })
 const vecDir = (ds: string[]) =>
   xdr.ScVal.scvVec(ds.map((d) => dir(d)))
@@ -146,6 +148,7 @@ async function esperar(hash: string, intentos = 25) {
 // ---- operaciones del dueño ----
 
 export interface ReglasNuevas {
+  nombre: string
   topeTotal: bigint
   topePorOperacion: bigint
   destinos: string[]
@@ -161,6 +164,7 @@ export async function crearFusible(dueno: Firmante, r: ReglasNuevas) {
     dueno,
     'create_fuse',
     dir(dueno.direccion),
+    str(r.nombre),
     dir(AGENTE_ID),
     dir(TOKEN_ID),
     i128(r.topeTotal),
@@ -191,6 +195,25 @@ export const leerTotal = () => leer<number>('total')
 
 /** Los fusibles de una dirección, del más viejo al más nuevo. */
 export const leerDeDueno = (owner: string) => leer<number[]>('de_dueno', dir(owner))
+
+/** Lo mínimo para pintar el selector: con qué id y con qué nombre. */
+export interface FusibleBreve {
+  id: number
+  nombre: string
+}
+
+/**
+ * Los fusibles del dueño, ya con su nombre.
+ *
+ * El contrato devuelve solo los identificadores, así que hay que leer cada
+ * fusible para saber cómo se llama. Van en paralelo: son simulaciones, no
+ * cuestan comisión, y en serie se notaría la espera.
+ */
+export async function leerMisFusibles(owner: string): Promise<FusibleBreve[]> {
+  const ids = await leerDeDueno(owner)
+  const estados = await Promise.all(ids.map((id) => leerEstado(id)))
+  return estados.map((e) => ({ id: e.id, nombre: e.nombre }))
+}
 
 // ---- el registro, leído de la red ----
 
