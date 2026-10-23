@@ -180,16 +180,16 @@ export const PASOS_TOUR: PasoTour[] = [
       'Esto se lee del contrato, no de esta página. Cuando la barra llega al final, el fusible deja de aprobar pagos sin que nadie intervenga.',
   },
   {
-    ancla: 'acciones',
-    titulo: 'Cortar y retirar',
-    texto:
-      'El corte es inmediato y definitivo: no hay forma de reactivar un fusible cortado. Lo que no se gastó vuelve a tu billetera cuando quieras.',
-  },
-  {
     ancla: 'autonomo',
     titulo: 'Suéltalo a trabajar',
     texto:
       'Aquí está el punto de todo: el agente tiene una tarea y paga por cada paso, pero no comprueba su saldo ni sabe cuándo parar. Quien lo detiene es el contrato, no él y no tú.',
+  },
+  {
+    ancla: 'acciones',
+    titulo: 'Cortar y retirar',
+    texto:
+      'El corte es inmediato y definitivo: no hay forma de reactivar un fusible cortado. Lo que no se gastó vuelve a tu billetera cuando quieras.',
   },
   {
     ancla: 'agente',

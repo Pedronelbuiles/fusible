@@ -314,6 +314,28 @@ export default function PanelRed({
               <small>Quedan {money(Math.max(0, tope - gastado))} XLM por gastar</small>
             </div>
 
+          </section>
+
+          <AgenteAutonomo
+            idFusible={estado.id}
+            costePorPaso={
+              // Que la tarea no quepa entera en el presupuesto es el punto:
+              // así el contrato tiene que frenarla. Redondeado a dos
+              // decimales para que la cifra se lea.
+              Math.max(0.01, Math.round(Math.min(porOp, tope / 6) * 100) / 100)
+            }
+            bloqueado={sinPagos}
+            onPagoHecho={() => cargar(estado.id)}
+          />
+
+          {/*
+            Los detalles y los controles van DEBAJO del agente a proposito.
+            En una pantalla de proyector (1366x768) solo entra pantalla y
+            media, y lo que tiene que verse junto es la barra del presupuesto
+            y el boton que suelta al agente: es el momento en que se ve al
+            contrato frenarlo. Cortar y retirar son secundarios.
+          */}
+          <section className="tarjeta">
             <dl className="datos">
               <div>
                 <dt>Tope por operación</dt>
@@ -381,18 +403,6 @@ export default function PanelRed({
               </p>
             )}
           </section>
-
-          <AgenteAutonomo
-            idFusible={estado.id}
-            costePorPaso={
-              // Que la tarea no quepa entera en el presupuesto es el punto:
-              // así el contrato tiene que frenarla. Redondeado a dos
-              // decimales para que la cifra se lea.
-              Math.max(0.01, Math.round(Math.min(porOp, tope / 6) * 100) / 100)
-            }
-            bloqueado={sinPagos}
-            onPagoHecho={() => cargar(estado.id)}
-          />
 
           <section className="tarjeta consola" data-tour="agente">
             <h2>Agente de demostración</h2>
