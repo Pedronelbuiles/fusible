@@ -46,6 +46,7 @@ export default function PanelRed({
 }) {
   const [idFusible, setIdFusible] = useState<number | null>(null)
   const [mios, setMios] = useState<number[]>([])
+  const [errorLista, setErrorLista] = useState<string | null>(null)
   const [estado, setEstado] = useState<EstadoCadena | null>(null)
   const [cargando, setCargando] = useState(true)
   const [proceso, setProceso] = useState<Proceso | null>(null)
@@ -79,10 +80,21 @@ export default function PanelRed({
     [cargarEventos],
   )
 
+  /**
+   * Los fusibles del dueño.
+   *
+   * Si la lectura falla NO se devuelve una lista vacía: eso haría parecer
+   * que no tienes fusibles cuando el problema es otro — por ejemplo que el
+   * contrato configurado sea una versión anterior sin `de_dueno`. Un fallo
+   * silencioso aquí cuesta horas de diagnóstico.
+   */
   const misIds = useCallback(async (direccion: string) => {
     try {
-      return await leerDeDueno(direccion)
-    } catch {
+      const ids = await leerDeDueno(direccion)
+      setErrorLista(null)
+      return ids
+    } catch (e) {
+      setErrorLista((e as Error).message)
       return []
     }
   }, [])
@@ -216,10 +228,11 @@ export default function PanelRed({
   if (!estado || creando) {
     return (
       <>
-        {mios.length > 0 && (
+        {(mios.length > 0 || errorLista) && (
           <Selector
             mios={mios}
             actual={null}
+            error={errorLista}
             bloqueado={proceso !== null}
             onElegir={(n) => {
               setCreando(false)
@@ -253,6 +266,7 @@ export default function PanelRed({
       <Selector
         mios={mios}
         actual={idFusible}
+        error={errorLista}
         bloqueado={ocupado}
         onElegir={(n) => void cargar(n)}
         onNuevo={() => setCreando(true)}
@@ -360,7 +374,12 @@ export default function PanelRed({
 
           <AgenteAutonomo
             idFusible={estado.id}
-            costePorPaso={Math.min(porOp, Math.max(0.5, tope / 6))}
+            costePorPaso={
+              // Que la tarea no quepa entera en el presupuesto es el punto:
+              // así el contrato tiene que frenarla. Redondeado a dos
+              // decimales para que la cifra se lea.
+              Math.max(0.01, Math.round(Math.min(porOp, tope / 6) * 100) / 100)
+            }
             bloqueado={sinPagos}
             onPagoHecho={() => cargar(estado.id)}
           />
@@ -423,12 +442,14 @@ export default function PanelRed({
 function Selector({
   mios,
   actual,
+  error,
   bloqueado,
   onElegir,
   onNuevo,
 }: {
   mios: number[]
   actual: number | null
+  error: string | null
   bloqueado: boolean
   onElegir: (n: number) => void
   onNuevo: () => void
@@ -436,6 +457,12 @@ function Selector({
   return (
     <nav className="mis-fusibles" data-tour="selector">
       <span>Mis fusibles</span>
+      {error && (
+        <span className="lista-rota" title={error}>
+          no se pudo leer tu lista — el contrato configurado parece una
+          versión anterior
+        </span>
+      )}
       {mios.map((n) => (
         <button
           key={n}

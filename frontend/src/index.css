@@ -731,3 +731,10 @@ code {
 
 .veredicto.frenado { background: #f0564a14; border-left: 3px solid var(--rojo); }
 .veredicto.ok { background: #4ade8012; border-left: 3px solid var(--verde); }
+
+.lista-rota {
+  color: var(--rojo);
+  font-size: 0.8rem;
+  max-width: 46ch;
+  line-height: 1.4;
+}
